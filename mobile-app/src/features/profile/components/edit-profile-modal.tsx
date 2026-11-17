@@ -1,0 +1,177 @@
+import { UserPen, X } from 'lucide-react-native';
+import { useState } from 'react';
+import { Modal, Pressable, View } from 'react-native';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { useTranslation } from 'react-i18next';
+
+import { haptics } from '@/shared/lib/haptics';
+import { useBontonStore } from '@/shared/store/bonton-store';
+import { Button, Text, TextField } from '@/shared/ui';
+
+interface EditProfileModalProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+export function EditProfileModal({ visible, onClose }: EditProfileModalProps) {
+  const { t } = useTranslation();
+  const { theme } = useUnistyles();
+  const userName = useBontonStore((s) => s.userName);
+  const userBio = useBontonStore((s) => s.userBio);
+  const setUserName = useBontonStore((s) => s.setUserName);
+  const setUserBio = useBontonStore((s) => s.setUserBio);
+
+  const [name, setName] = useState(userName);
+  const [bio, setBio] = useState(userBio);
+
+  const handleSave = () => {
+    haptics.success();
+    setUserName(name.trim() || 'মাকসুদ');
+    setUserBio(bio.trim() || 'সহজ হিসাব, সুন্দর বন্ধুত্ব।');
+    onClose();
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.backdrop}>
+        <Pressable style={styles.dismissArea} onPress={onClose} />
+
+        <View style={styles.sheet}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <View style={styles.headerIconContainer}>
+                <UserPen size={22} color={theme.colors.primary} />
+              </View>
+              <View style={styles.headerTextGroup}>
+                <Text variant="heading" style={styles.headerTitle}>
+                  {t('profile.editProfile')}
+                </Text>
+                <Text variant="caption" tone="secondary">
+                  {t('profile.subtitle')}
+                </Text>
+              </View>
+            </View>
+
+            <Pressable
+              onPress={onClose}
+              hitSlop={10}
+              style={({ pressed }) => [
+                styles.closeButton,
+                pressed && styles.buttonPressed,
+              ]}
+            >
+              <X size={18} color={theme.colors.textSecondary} />
+            </Pressable>
+          </View>
+
+          {/* Form */}
+          <View style={styles.form}>
+            <TextField
+              label={t('profile.namePrompt')}
+              value={name}
+              onChangeText={setName}
+              placeholder="যেমন: মাকসুদ"
+              autoFocus
+            />
+
+            <TextField
+              label={t('profile.bioPrompt')}
+              value={bio}
+              onChangeText={setBio}
+              placeholder="আপনার ছোট স্লোগান বা স্ট্যাটাস"
+            />
+          </View>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <Button
+              label={t('common.save')}
+              kind="primary"
+              fullWidth
+              onPress={handleSave}
+            />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create((theme) => ({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'flex-end',
+  },
+  dismissArea: {
+    flex: 1,
+  },
+  sheet: {
+    backgroundColor: theme.colors.card,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.xl,
+    paddingTop: theme.spacing.xl,
+    paddingBottom: Math.max(theme.spacing.xxl, 28),
+    shadowColor: theme.colors.shadow,
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: theme.isDark ? 0.35 : 0.15,
+    shadowRadius: 18,
+    elevation: 20,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.lg,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    flex: 1,
+  },
+  headerIconContainer: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: theme.colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTextGroup: {
+    flex: 1,
+    gap: 2,
+  },
+  headerTitle: {
+    fontWeight: theme.typography.weight.bold,
+  },
+  closeButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonPressed: {
+    opacity: 0.75,
+  },
+  form: {
+    gap: theme.spacing.md,
+    marginVertical: theme.spacing.sm,
+  },
+  footer: {
+    marginTop: theme.spacing.lg,
+  },
+}));

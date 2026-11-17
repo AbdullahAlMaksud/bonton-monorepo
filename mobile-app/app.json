@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Bonton",
+    "slug": "bonton",
+    "scheme": "bonton",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "icon": "./public/logo/logo-white.png",
+    "splash": {
+      "image": "./public/logo/adaptive-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
+    "ios": {
+      "bundleIdentifier": "com.bonton.app",
+      "supportsTablet": true,
+      "icon": "./public/logo/logo-white.png"
+    },
+    "android": {
+      "package": "com.abdullahalmaksud.bonton",
+      "adaptiveIcon": {
+        "foregroundImage": "./public/logo/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "react-native-edge-to-edge",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./public/logo/adaptive-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "dark": {
+            "image": "./public/logo/adaptive-icon.png",
+            "backgroundColor": "#111827"
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
