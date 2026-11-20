@@ -1,19 +1,28 @@
 import { useEffect, useState, type ComponentProps } from 'react';
 import { BlurView } from 'expo-blur';
-import { House, Plus, User } from 'lucide-react-native';
+import { FolderKanban, House, Plus, User } from 'lucide-react-native';
 import { Platform, StyleSheet as RNStyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
-import { Tabs, router } from 'expo-router';
+import { Redirect, Tabs, router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { SystemBars } from 'react-native-edge-to-edge';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet } from 'react-native-unistyles';
 
 import { haptics } from '@/shared/lib/haptics';
+import { useBontonStore } from '@/shared/store/bonton-store';
 import { withTheme, type WithTheme } from '@/shared/theme/with-theme';
 import { PressableScale, Text } from '@/shared/ui';
 
 type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
 
 export default function TabsLayout() {
+  const hasCompletedOnboarding = useBontonStore((s) => s.hasCompletedOnboarding);
+
+  if (!hasCompletedOnboarding) {
+    return <Redirect href="/onboarding" />;
+  }
+
   const { t } = useTranslation();
 
   return (
@@ -28,15 +37,23 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: t('tabs.home'),
+          title: t('tabs.home', 'Home'),
         }}
       />
 
-      {/* 2. Profile Tab */}
+      {/* 2. Projects Tab */}
+      <Tabs.Screen
+        name="projects"
+        options={{
+          title: t('tabs.projects', 'Projects'),
+        }}
+      />
+
+      {/* 3. Profile Tab */}
       <Tabs.Screen
         name="profile"
         options={{
-          title: t('tabs.profile'),
+          title: t('tabs.profile', 'Profile'),
         }}
       />
     </Tabs>
@@ -87,9 +104,17 @@ function CustomBottomBarComponent({
     transform: [{ translateX: offset.value }],
   }));
 
+  const isHome = state.index === 0;
+  // Reverse status bar style on Home screen only (light icons on dark header in light mode).
+  // All other screens follow the active theme (dark icons in light mode, light icons in dark mode).
+  const statusBarStyle = isHome ? 'light' : (theme.isDark ? 'light' : 'dark');
+
   return (
-    <View style={styles.barContainer} pointerEvents="box-none">
-      {/* 1. Pill Capsule with Home & Profile tabs */}
+    <>
+      <StatusBar style={statusBarStyle} />
+      <SystemBars style={{ statusBar: statusBarStyle, navigationBar: theme.isDark ? 'light' : 'dark' }} />
+      <View style={styles.barContainer} pointerEvents="box-none">
+      {/* 1. Pill Capsule with Home, Projects & Profile tabs */}
       <View style={styles.capsule} onLayout={handleLayout}>
         <BlurView
           intensity={Platform.OS === 'ios' ? 80 : 40}
@@ -110,10 +135,10 @@ function CustomBottomBarComponent({
             options.title !== undefined
               ? options.title
               : route.name === 'index'
-                ? t('tabs.home')
-                : t('tabs.profile');
-
-          const Icon = route.name === 'index' ? House : User;
+                ? t('tabs.home', 'Home')
+                : route.name === 'projects'
+                  ? t('tabs.projects', 'Projects')
+                  : t('tabs.profile', 'Profile');
 
           const onPress = () => {
             haptics.select();
@@ -138,20 +163,43 @@ function CustomBottomBarComponent({
               onPress={onPress}
               style={styles.tabButton}
             >
-              <Icon
-                size={21}
-                color={
-                  isFocused ? theme.colors.primary : theme.colors.textSecondary
-                }
-                strokeWidth={isFocused ? 2.5 : 1.9}
-              />
+              <View
+                style={[
+                  styles.tabDotIcon,
+                  {
+                    backgroundColor: isFocused
+                      ? theme.colors.primary
+                      : theme.colors.secondaryMuted,
+                  },
+                ]}
+              >
+                {route.name === 'index' ? (
+                  <House
+                    size={12}
+                    color={isFocused ? theme.colors.onPrimary : theme.colors.textSecondary}
+                    strokeWidth={2.5}
+                  />
+                ) : route.name === 'projects' ? (
+                  <FolderKanban
+                    size={12}
+                    color={isFocused ? theme.colors.onPrimary : theme.colors.textSecondary}
+                    strokeWidth={2.5}
+                  />
+                ) : (
+                  <User
+                    size={12}
+                    color={isFocused ? theme.colors.onPrimary : theme.colors.textSecondary}
+                    strokeWidth={2.5}
+                  />
+                )}
+              </View>
               <Text
                 variant="caption"
                 style={[
                   styles.tabLabel,
                   {
                     color: isFocused
-                      ? theme.colors.primary
+                      ? theme.colors.text
                       : theme.colors.textSecondary,
                     fontWeight: isFocused
                       ? theme.typography.weight.bold
@@ -166,24 +214,35 @@ function CustomBottomBarComponent({
         })}
       </View>
 
-      {/* 2. Circular Action Button (+) matching user wireframe */}
+      {/* 2. Circular Action Button (+) navigating directly to add expense */}
       <PressableScale
         accessibilityRole="button"
-        accessibilityLabel={t('dashboard.newGroup')}
+        accessibilityLabel={t('group.addExpense', 'Add Expense')}
         scaleTo={0.92}
         onPress={() => {
           haptics.tap();
-          router.push('/groups/new');
+          const groups = useBontonStore.getState().groups;
+          const activeGroupId = useBontonStore.getState().activeGroupId;
+          const activeGroup = groups.find((g) => g.id === activeGroupId) ?? groups[0];
+          if (activeGroup) {
+            router.push({
+              pathname: '/expense/add',
+              params: { groupId: activeGroup.id },
+            });
+          } else {
+            router.push('/groups/new');
+          }
         }}
         style={styles.fabButton}
       >
         <Plus
-          size={26}
+          size={28}
           color={theme.colors.onPrimary}
-          strokeWidth={2.6}
+          strokeWidth={2.8}
         />
       </PressableScale>
     </View>
+    </>
   );
 }
 
@@ -195,12 +254,12 @@ const styles = StyleSheet.create((theme, rt) => ({
   },
   barContainer: {
     position: 'absolute',
-    left: theme.spacing.xl,
-    right: theme.spacing.xl,
-    bottom: Math.max(rt.insets.bottom, theme.spacing.md) + theme.spacing.md,
+    left: theme.spacing.lg,
+    right: theme.spacing.lg,
+    bottom: Math.max(rt.insets.bottom, theme.spacing.xs) + theme.spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.xxl,
+    gap: theme.spacing.md,
   },
   capsule: {
     flex: 1,
@@ -211,16 +270,12 @@ const styles = StyleSheet.create((theme, rt) => ({
     justifyContent: 'space-around',
     paddingHorizontal: theme.spacing.xs,
     paddingVertical: theme.spacing.xs,
-    borderWidth: 1.2,
-    borderColor: theme.isDark
-      ? 'rgba(255, 255, 255, 0.14)'
-      : theme.colors.border,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     backgroundColor:
       Platform.OS === 'ios'
         ? 'transparent'
-        : theme.isDark
-          ? 'rgba(24, 24, 27, 0.90)'
-          : 'rgba(255, 255, 255, 0.94)',
+        : theme.colors.card,
     ...theme.shadows.md,
     overflow: 'hidden',
   },
@@ -228,7 +283,8 @@ const styles = StyleSheet.create((theme, rt) => ({
     ...RNStyleSheet.absoluteFill,
     backgroundColor: theme.isDark
       ? 'rgba(24, 24, 27, 0.70)'
-      : 'rgba(255, 255, 255, 0.78)',
+      : theme.colors.card,
+    opacity: 0.85,
   },
   slidingIndicator: {
     position: 'absolute',
@@ -241,18 +297,24 @@ const styles = StyleSheet.create((theme, rt) => ({
   tabButton: {
     flex: 1,
     height: '100%',
+    flexDirection: 'row',
+    gap: theme.spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: theme.spacing.sm,
-    paddingBottom: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
     borderRadius: theme.radius.pill,
-    gap: 2,
     backgroundColor: 'transparent',
     zIndex: 1,
   },
+  tabDotIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   tabLabel: {
-    fontSize: 11,
+    fontSize: theme.typography.size.sm,
     marginTop: 1,
   },
   fabButton: {

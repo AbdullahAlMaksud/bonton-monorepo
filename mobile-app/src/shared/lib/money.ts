@@ -22,16 +22,16 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyInfo> = {
 
 const BN_DIGITS = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'] as const;
 
-export function toBengaliDigits(text: string): string {
-  return text.replace(/[0-9]/g, (d) => BN_DIGITS[Number(d)] ?? d);
+export function toBengaliDigits(text: string | number): string {
+  return String(text).replace(/[0-9]/g, (d) => BN_DIGITS[Number(d)] ?? d);
 }
 
 export function toAsciiDigits(text: string): string {
   return text.replace(/[০-৯]/g, (d) => String(BN_DIGITS.indexOf(d as (typeof BN_DIGITS)[number])));
 }
 
-export function localizeDigits(text: string, lang: LangCode): string {
-  return lang === 'bn' ? toBengaliDigits(text) : text;
+export function localizeDigits(text: string | number, lang: LangCode): string {
+  return lang === 'bn' ? toBengaliDigits(text) : String(text);
 }
 
 function groupInternational(digits: string): string {

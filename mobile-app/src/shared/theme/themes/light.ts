@@ -16,7 +16,7 @@ export const light: AppTheme = createTheme('light', false, {
   primaryMuted: '#00000010',
   secondary: '#4B5563',
   secondaryText: '#4B5563',
-  secondaryMuted: '#4B556314',
+  secondaryMuted: '#202020',
   accent: '#9CA3AF',
   accentText: '#4B5563',
   accentMuted: '#9CA3AF24',

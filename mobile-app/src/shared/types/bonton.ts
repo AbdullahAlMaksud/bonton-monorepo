@@ -22,7 +22,7 @@ export type LangCode = (typeof LANGUAGE_CODES)[number];
 
 export const FONT_NAMES = [
   'system',
-  'hind-siliguri',
+  'anek-bangla',
   'noto-serif-bengali',
   'inter',
   'playfair',
@@ -90,9 +90,11 @@ export interface Expense extends ExpenseInput {
 export interface Group {
   id: GroupId;
   name: string;
+  description?: string;
   icon: GroupIconName;
   members: Member[];
   expenses: Expense[];
+  defaultSplitType?: SplitType;
   createdAt: number;
   updatedAt: number;
 }

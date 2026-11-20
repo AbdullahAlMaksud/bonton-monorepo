@@ -1,6 +1,8 @@
+import React from 'react';
 import { StyleSheet as RNStyleSheet, Text as RNText, type TextProps as RNTextProps } from 'react-native';
 import { StyleSheet } from 'react-native-unistyles';
 
+import { toBengaliDigits } from '@/shared/lib/money';
 import { useBontonStore } from '@/shared/store/bonton-store';
 import { getFontFamily } from '@/shared/theme/fonts';
 
@@ -13,15 +15,32 @@ export interface TextProps extends RNTextProps {
   align?: 'left' | 'center' | 'right';
 }
 
-export function Text({ variant = 'body', tone = 'default', align, style, ...rest }: TextProps) {
+function localizeNode(node: React.ReactNode, isBn: boolean): React.ReactNode {
+  if (!isBn || node === null || node === undefined) return node;
+  if (typeof node === 'string') {
+    return toBengaliDigits(node);
+  }
+  if (typeof node === 'number') {
+    return toBengaliDigits(node);
+  }
+  if (Array.isArray(node)) {
+    return React.Children.map(node, (child) => localizeNode(child, isBn));
+  }
+  return node;
+}
+
+export function Text({ variant = 'body', tone = 'default', align, style, children, ...rest }: TextProps) {
   // `default` is a reserved variant key in Unistyles, so the default tone is "no variant".
   styles.useVariants({ variant, tone: tone === 'default' ? undefined : tone });
   const activeFont = useBontonStore((s) => s.font);
+  const language = useBontonStore((s) => s.language);
 
   const flatStyle = RNStyleSheet.flatten(style);
   const isBoldVariant = variant === 'display' || variant === 'title' || variant === 'heading';
   const weight = flatStyle?.fontWeight || (isBoldVariant ? 'bold' : 'normal');
   const resolvedFontFamily = flatStyle?.fontFamily || getFontFamily(activeFont, weight);
+
+  const localizedChildren = localizeNode(children, language === 'bn');
 
   return (
     <RNText
@@ -32,7 +51,9 @@ export function Text({ variant = 'body', tone = 'default', align, style, ...rest
         align ? { textAlign: align } : null,
         style,
       ]}
-    />
+    >
+      {localizedChildren}
+    </RNText>
   );
 }
 

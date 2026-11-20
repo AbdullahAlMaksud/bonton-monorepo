@@ -30,6 +30,7 @@ import type {
   Member,
   MemberBalance,
   MemberId,
+  SplitType,
   Transfer,
 } from '@/shared/types/bonton';
 
@@ -62,15 +63,23 @@ export type ExpenseOutcome = { ok: true; expenseId: ExpenseId } | { ok: false; e
 
 export interface BontonState {
   groups: Group[];
+  activeGroupId: GroupId | null;
   theme: ThemeName;
   language: LangCode;
   currency: CurrencyCode;
   font: FontName;
   userName: string;
   userBio: string;
+  userAvatar: string | null;
+  defaultSplitType: SplitType;
+  hasCompletedOnboarding: boolean;
 
+  setActiveGroupId: (id: GroupId | null) => void;
   createGroup: (input: CreateGroupInput) => GroupId;
-  updateGroup: (groupId: GroupId, patch: Partial<Pick<Group, 'name' | 'icon'>>) => void;
+  updateGroup: (
+    groupId: GroupId,
+    patch: Partial<Pick<Group, 'name' | 'icon' | 'description' | 'defaultSplitType'>>,
+  ) => void;
   deleteGroup: (groupId: GroupId) => void;
   addMember: (groupId: GroupId, name: string) => AddMemberResult;
   /** Removes the member and re-splits every affected expense (see rebalanceExpenseAfterRemoval). */
@@ -90,6 +99,9 @@ export interface BontonState {
   setFont: (font: FontName) => void;
   setUserName: (name: string) => void;
   setUserBio: (bio: string) => void;
+  setUserAvatar: (avatar: string | null) => void;
+  setDefaultSplitType: (splitType: SplitType) => void;
+  completeOnboarding: (userName?: string) => void;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -133,19 +145,61 @@ function mapGroup(groups: Group[], groupId: GroupId, update: (group: Group) => G
 /** Persisted slice only — actions are never serialized. */
 type PersistedState = Pick<
   BontonState,
-  'groups' | 'theme' | 'language' | 'currency' | 'font' | 'userName' | 'userBio'
+  | 'groups'
+  | 'theme'
+  | 'language'
+  | 'currency'
+  | 'font'
+  | 'userName'
+  | 'userBio'
+  | 'userAvatar'
+  | 'defaultSplitType'
+  | 'hasCompletedOnboarding'
 >;
+
+export const INITIAL_DEMO_GROUP: Group = {
+  id: 'g_sajek_tour',
+  name: 'Sajek Tour',
+  icon: 'plane',
+  defaultSplitType: 'equal',
+  members: [
+    { id: 'm_me', name: 'Abdullah Al Maksud', isMe: true },
+    { id: 'm_tanvir', name: 'Tanvir', isMe: false },
+    { id: 'm_rahim', name: 'Rahim', isMe: false },
+    { id: 'm_karim', name: 'Karim', isMe: false },
+  ],
+  expenses: [
+    {
+      id: 'e_sajek_1',
+      title: 'Resort & Food',
+      amount: 128700,
+      payers: [{ memberId: 'm_me', amount: 128700 }],
+      personalBills: [],
+      split: {
+        type: 'equal',
+        participantIds: ['m_me', 'm_tanvir', 'm_rahim', 'm_karim'],
+      },
+      createdAt: 1731900000000,
+      updatedAt: 1731900000000,
+    },
+  ],
+  createdAt: 1731800000000,
+  updatedAt: 1731900000000,
+};
 
 export const DEFAULT_SETTINGS = {
   theme: 'light',
   language: 'bn',
   currency: 'BDT',
-  font: 'hind-siliguri',
-  userName: 'মাকসুদ',
+  font: 'anek-bangla',
+  userName: 'Abdullah Al Maksud',
   userBio: 'আপনার উপকরণ, রেসিপি পাতিলের।',
+  userAvatar: null as string | null,
+  defaultSplitType: 'equal',
+  hasCompletedOnboarding: false,
 } as const satisfies Pick<
   PersistedState,
-  'theme' | 'language' | 'currency' | 'font' | 'userName' | 'userBio'
+  'theme' | 'language' | 'currency' | 'font' | 'userName' | 'userBio' | 'userAvatar' | 'defaultSplitType' | 'hasCompletedOnboarding'
 >;
 
 /* -------------------------------------------------------------------------- */
@@ -155,13 +209,19 @@ export const DEFAULT_SETTINGS = {
 export const useBontonStore = create<BontonState>()(
   persist(
     (set, get) => ({
-      groups: [],
+      groups: [INITIAL_DEMO_GROUP],
+      activeGroupId: INITIAL_DEMO_GROUP.id,
       theme: DEFAULT_SETTINGS.theme,
       language: DEFAULT_SETTINGS.language,
       currency: DEFAULT_SETTINGS.currency,
       font: DEFAULT_SETTINGS.font,
       userName: DEFAULT_SETTINGS.userName,
       userBio: DEFAULT_SETTINGS.userBio,
+      userAvatar: DEFAULT_SETTINGS.userAvatar,
+      defaultSplitType: DEFAULT_SETTINGS.defaultSplitType,
+      hasCompletedOnboarding: DEFAULT_SETTINGS.hasCompletedOnboarding,
+
+      setActiveGroupId: (id) => set({ activeGroupId: id }),
 
       createGroup: ({ name, icon, memberNames }) => {
         const now = Date.now();
@@ -178,12 +238,13 @@ export const useBontonStore = create<BontonState>()(
           id: createId('g_'),
           name: cleanName(name),
           icon,
+          defaultSplitType: get().defaultSplitType,
           members: [{ id: createId('m_'), name: '', isMe: true }, ...others],
           expenses: [],
           createdAt: now,
           updatedAt: now,
         };
-        set((state) => ({ groups: [group, ...state.groups] }));
+        set((state) => ({ groups: [group, ...state.groups], activeGroupId: group.id }));
         return group.id;
       },
 
@@ -194,13 +255,22 @@ export const useBontonStore = create<BontonState>()(
             ...g,
             ...(patch.name !== undefined ? { name: cleanName(patch.name) } : {}),
             ...(patch.icon !== undefined ? { icon: patch.icon } : {}),
+            ...(patch.description !== undefined ? { description: patch.description.trim() } : {}),
+            ...(patch.defaultSplitType !== undefined ? { defaultSplitType: patch.defaultSplitType } : {}),
             updatedAt: now,
           })),
         }));
       },
 
       deleteGroup: (groupId) => {
-        set((state) => ({ groups: state.groups.filter((g) => g.id !== groupId) }));
+        set((state) => {
+          const nextGroups = state.groups.filter((g) => g.id !== groupId);
+          return {
+            groups: nextGroups,
+            activeGroupId:
+              state.activeGroupId === groupId ? (nextGroups[0]?.id ?? null) : state.activeGroupId,
+          };
+        });
       },
 
       addMember: (groupId, name) => {
@@ -326,6 +396,13 @@ export const useBontonStore = create<BontonState>()(
       setFont: (font) => set({ font }),
       setUserName: (userName) => set({ userName }),
       setUserBio: (userBio) => set({ userBio }),
+      setUserAvatar: (userAvatar) => set({ userAvatar }),
+      setDefaultSplitType: (defaultSplitType) => set({ defaultSplitType }),
+      completeOnboarding: (userName) =>
+        set((state) => ({
+          hasCompletedOnboarding: true,
+          ...(userName && userName.trim() ? { userName: userName.trim() } : {}),
+        })),
     }),
     {
       name: 'bonton-store',
@@ -339,9 +416,18 @@ export const useBontonStore = create<BontonState>()(
         font: state.font || DEFAULT_SETTINGS.font,
         userName: state.userName || DEFAULT_SETTINGS.userName,
         userBio: state.userBio || DEFAULT_SETTINGS.userBio,
+        userAvatar: state.userAvatar ?? DEFAULT_SETTINGS.userAvatar,
+        defaultSplitType: state.defaultSplitType || DEFAULT_SETTINGS.defaultSplitType,
+        hasCompletedOnboarding: state.hasCompletedOnboarding ?? DEFAULT_SETTINGS.hasCompletedOnboarding,
       }),
       // Add `if (version < 2) { … }` steps here when the persisted shape changes.
-      migrate: (persisted) => persisted as PersistedState,
+      migrate: (persisted) => {
+        const state = persisted as PersistedState;
+        if ((state.font as string) === 'hind-siliguri') {
+          state.font = 'anek-bangla';
+        }
+        return state;
+      },
     },
   ),
 );

@@ -1,69 +1,105 @@
-import { StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import type { StyleProp, ViewStyle } from 'react-native';
+import { View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
-import { useUnistyles } from 'react-native-unistyles';
+import { StyleSheet } from 'react-native-unistyles';
+
+import { withTheme, type WithTheme } from '@/shared/theme/with-theme';
 
 export interface WavyHeaderProps {
-  height?: number;
+  height?: number | `${number}%` | '100%';
+  style?: StyleProp<ViewStyle>;
+  variant?: 'standard' | 'tall';
 }
 
-export function WavyHeader({ height = 230 }: WavyHeaderProps) {
-  const insets = useSafeAreaInsets();
-  const { theme } = useUnistyles();
+function WavyHeaderComponent({
+  height = 230,
+  style,
+  variant = 'standard',
+  theme,
+  rt,
+}: WithTheme<WavyHeaderProps>) {
+  const isNumericHeight = typeof height === 'number';
+  const totalHeight = isNumericHeight ? height + rt.insets.top : height;
 
-  const totalHeight = height + insets.top;
-
-  // Gray shades gradient for wavy header
   const isDark = theme.isDark;
+
+  // Multilayered gradient stops fully bound to active theme colors
   const gradientStops = isDark
     ? {
-        start: '#000000',
-        middle: '#18181B',
-        end: '#27272A',
-        accentWave: '#3F3F46',
-      }
+      start: theme.colors.card,
+      middle: '#18181B',
+      end: '#27272A',
+      accentWave: theme.colors.accent,
+    }
     : {
-        start: '#0F172A',
-        middle: '#1E293B',
-        end: '#334155',
-        accentWave: '#64748B',
-      };
+      start: theme.colors.primary,
+      middle: theme.colors.secondaryMuted,
+      end: theme.colors.primary,
+      accentWave: theme.colors.accent,
+    };
+
+  const isTall = variant === 'tall';
 
   return (
-    <View style={[styles.container, { height: totalHeight }]} pointerEvents="none">
+    <View
+      style={[
+        styles.container,
+        totalHeight ? { height: totalHeight } : null,
+        style,
+      ]}
+      pointerEvents="none"
+    >
       <Svg
         width="100%"
         height="100%"
-        viewBox="0 0 400 240"
+        viewBox={isTall ? '0 0 400 320' : '0 0 400 240'}
         preserveAspectRatio="none"
         style={StyleSheet.absoluteFill}
       >
         <Defs>
-          {/* Main Gray Wave Gradient */}
-          <LinearGradient id="grayWaveGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          {/* Main Primary Wave Gradient */}
+          <LinearGradient id="wavyHeaderPrimaryGradient" x1="70%" y1="10%" x2="100%" y2="100%">
             <Stop offset="0%" stopColor={gradientStops.start} stopOpacity="1" />
-            <Stop offset="55%" stopColor={gradientStops.middle} stopOpacity="1" />
+            <Stop offset="40%" stopColor={gradientStops.middle} stopOpacity="1" />
             <Stop offset="100%" stopColor={gradientStops.end} stopOpacity="1" />
           </LinearGradient>
 
-          {/* Accent Wave Gradient (lighter gray/ash) */}
-          <LinearGradient id="accentWaveGradient" x1="100%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor={gradientStops.accentWave} stopOpacity="0.4" />
-            <Stop offset="100%" stopColor={gradientStops.middle} stopOpacity="0.1" />
+          {/* Accent Wave Gradient (lighter accent/secondary) */}
+          <LinearGradient id="wavyHeaderAccentGradient" x1="100%" y1="0%" x2="0%" y2="100%">
+            <Stop offset="0%" stopColor={gradientStops.accentWave} stopOpacity="0.60" />
+            <Stop offset="100%" stopColor={gradientStops.middle} stopOpacity="0.15" />
           </LinearGradient>
         </Defs>
 
-        {/* Layer 1: Background accent wave */}
-        <Path
-          d="M 0 0 L 400 0 L 400 185 C 330 220 260 160 170 205 C 90 235 30 195 0 215 Z"
-          fill="url(#accentWaveGradient)"
-        />
+        {isTall ? (
+          <>
+            {/* Layer 1: Background accent wave (curves gently at the bottom) */}
+            <Path
+              d="M 0 0 L 400 0 L 400 265 C 330 300 260 240 170 285 C 90 315 30 275 0 295 Z"
+              fill="url(#wavyHeaderAccentGradient)"
+            />
 
-        {/* Layer 2: Main primary wave */}
-        <Path
-          d="M 0 0 L 400 0 L 400 160 C 310 205 230 145 140 185 C 70 215 20 180 0 190 Z"
-          fill="url(#grayWaveGradient)"
-        />
+            {/* Layer 2: Main primary wave (curves gently at the bottom) */}
+            <Path
+              d="M 0 0 L 400 0 L 400 240 C 310 285 230 225 140 265 C 70 295 20 260 0 270 Z"
+              fill="url(#wavyHeaderPrimaryGradient)"
+            />
+          </>
+        ) : (
+          <>
+            {/* Layer 1: Background accent wave */}
+            <Path
+              d="M 0 0 L 400 0 L 400 185 C 330 220 260 160 170 205 C 90 235 30 195 0 215 Z"
+              fill="url(#wavyHeaderAccentGradient)"
+            />
+
+            {/* Layer 2: Main primary wave */}
+            <Path
+              d="M 0 0 L 400 0 L 400 160 C 310 205 230 145 140 185 C 70 215 20 180 0 190 Z"
+              fill="url(#wavyHeaderPrimaryGradient)"
+            />
+          </>
+        )}
       </Svg>
     </View>
   );
@@ -78,3 +114,5 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 });
+
+export const WavyHeader = withTheme(WavyHeaderComponent);

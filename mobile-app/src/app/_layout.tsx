@@ -3,6 +3,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, View } from 'react-native';
 import { SystemBars } from 'react-native-edge-to-edge';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { UnistylesRuntime, useUnistyles } from 'react-native-unistyles';
@@ -63,7 +64,23 @@ function AppBootstrap({ children }: { children: ReactNode }) {
     if (applied) void SplashScreen.hideAsync();
   }, [applied]);
 
-  return applied ? <>{children}</> : null;
+  if (!applied) {
+    const activeTheme = themes[theme] || themes.light;
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: activeTheme.colors.background,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <ActivityIndicator size="large" color={activeTheme.colors.primary} />
+      </View>
+    );
+  }
+
+  return <>{children}</>;
 }
 
 function ThemedStack() {
@@ -84,6 +101,7 @@ function ThemedStack() {
           contentStyle: { backgroundColor: theme.colors.background },
         }}
       >
+        <Stack.Screen name="onboarding" options={{ headerShown: false, animation: 'fade' }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="groups/new" options={{ presentation: 'modal', title: t('groupNew.title') }} />
         <Stack.Screen name="groups/[id]" options={{ title: '' }} />

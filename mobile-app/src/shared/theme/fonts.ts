@@ -4,8 +4,8 @@ import type { FontName } from '@/shared/types/bonton';
  * Font assets map for expo-font (loaded from public/fonts/).
  */
 export const customFontMap = {
-  'HindSiliguri-Regular': require('../../../public/fonts/HindSiliguri-Regular.ttf'),
-  'HindSiliguri-Bold': require('../../../public/fonts/HindSiliguri-Bold.ttf'),
+  'AnekBangla-Regular': require('../../../public/fonts/AnekBangla-Regular.ttf'),
+  'AnekBangla-Bold': require('../../../public/fonts/AnekBangla-Bold.ttf'),
   'NotoSerifBengali-Regular': require('../../../public/fonts/NotoSerifBengali-Regular.ttf'),
   'Inter-Regular': require('../../../public/fonts/Inter-Regular.ttf'),
   'PlayfairDisplay-Regular': require('../../../public/fonts/PlayfairDisplay-Regular.ttf'),
@@ -34,10 +34,10 @@ export const FONT_OPTIONS: FontOption[] = [
     lang: 'all',
   },
   {
-    id: 'hind-siliguri',
-    name: 'Hind Siliguri',
-    nameBn: 'হিন্দ শিলিগুড়ি',
-    subtitle: 'আধুনিক, ট্রেন্ডি ও পরিষ্কার সান্স-সেরিফ',
+    id: 'anek-bangla',
+    name: 'Anek Bangla',
+    nameBn: 'আনেক বাংলা',
+    subtitle: 'আধুনিক, প্রাণবন্ত ও সুপাঠ্য জ্যামিতিক বাংলা ফন্ট',
     category: 'বাংলা সান্স',
     badge: 'বাংলা',
     preview: 'হিসাব হোক স্বচ্ছ ও নিখুঁত',
@@ -90,8 +90,9 @@ export function getFontFamily(font: FontName = 'system', weight?: string | numbe
     weight === 'semibold';
 
   switch (font) {
-    case 'hind-siliguri':
-      return isBold ? 'HindSiliguri-Bold' : 'HindSiliguri-Regular';
+    case 'anek-bangla':
+    case 'hind-siliguri' as any:
+      return isBold ? 'AnekBangla-Bold' : 'AnekBangla-Regular';
     case 'noto-serif-bengali':
       return 'NotoSerifBengali-Regular';
     case 'inter':

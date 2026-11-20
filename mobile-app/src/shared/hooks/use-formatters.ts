@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { formatBps, formatCount, formatDate, formatMoney } from '@/shared/lib/money';
+import { formatBps, formatCount, formatDate, formatMoney, localizeDigits } from '@/shared/lib/money';
 import { useBontonStore } from '@/shared/store/bonton-store';
 import type { Cents, Member } from '@/shared/types/bonton';
 
@@ -19,6 +19,7 @@ export function useFormatters() {
       money: (minor: Cents) => formatMoney(minor, currency, language),
       bps: (value: number) => formatBps(value, language),
       count: (value: number) => formatCount(value, language),
+      number: (value: number | string) => localizeDigits(value, language),
       date: (timestamp: number) => formatDate(timestamp, language, months),
       /** The current user is shown as a localized "You"; others by their typed name. */
       memberName: (member: Pick<Member, 'isMe' | 'name'>) => (member.isMe ? t('common.you') : member.name),

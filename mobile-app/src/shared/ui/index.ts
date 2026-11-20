@@ -1,4 +1,5 @@
 export { Avatar } from './avatar';
+export { BottomSheetModal, type BottomSheetModalProps } from './bottom-sheet-modal';
 export { Button, type ButtonKind, type ButtonProps } from './button';
 export { Card } from './card';
 export { Chip } from './chip';

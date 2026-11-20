@@ -74,7 +74,11 @@ export function equalPercentages(members: readonly Member[]): Record<MemberId, s
   return recordOf(members, (member) => minorToInputString(bps[members.indexOf(member)] ?? 0));
 }
 
-export function createInitialForm(members: readonly Member[], expense?: Expense): ExpenseFormState {
+export function createInitialForm(
+  members: readonly Member[],
+  expense?: Expense,
+  defaultSplitType: SplitType = 'equal',
+): ExpenseFormState {
   const me = members.find((m) => m.isMe) ?? members[0];
   const base: ExpenseFormState = {
     title: '',
@@ -84,7 +88,7 @@ export function createInitialForm(members: readonly Member[], expense?: Expense)
     payerAmounts: recordOf(members, () => ''),
     personalOpen: false,
     personalAmounts: recordOf(members, () => ''),
-    splitType: 'equal',
+    splitType: defaultSplitType,
     participants: recordOf(members, () => true),
     percentages: equalPercentages(members),
     customAmounts: recordOf(members, () => ''),

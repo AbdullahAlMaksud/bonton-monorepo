@@ -1,0 +1,229 @@
+import { Settings2, X } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
+import { StyleSheet, useUnistyles } from 'react-native-unistyles';
+import { useTranslation } from 'react-i18next';
+
+import { haptics } from '@/shared/lib/haptics';
+import { useBontonStore } from '@/shared/store/bonton-store';
+import type { Group, SplitType } from '@/shared/types/bonton';
+import {
+  BottomSheetModal,
+  Button,
+  SegmentedControl,
+  type SegmentOption,
+  Text,
+  TextField,
+} from '@/shared/ui';
+
+export interface EditProjectModalProps {
+  visible: boolean;
+  onClose: () => void;
+  group: Group;
+}
+
+export function EditProjectModal({ visible, onClose, group }: EditProjectModalProps) {
+  const { t } = useTranslation();
+  const { theme } = useUnistyles();
+
+  const currentUserName = useBontonStore((s) => s.userName);
+  const setGlobalUserName = useBontonStore((s) => s.setUserName);
+  const updateGroup = useBontonStore((s) => s.updateGroup);
+
+  const [projectName, setProjectName] = useState(group.name);
+  const [userName, setUserName] = useState(currentUserName);
+  const [description, setDescription] = useState(group.description ?? '');
+  const [splitType, setSplitType] = useState<SplitType>(group.defaultSplitType ?? 'equal');
+
+  // Re-sync local state whenever the modal opens or the active group changes
+  useEffect(() => {
+    if (visible) {
+      setProjectName(group.name);
+      setUserName(currentUserName);
+      setDescription(group.description ?? '');
+      setSplitType(group.defaultSplitType ?? 'equal');
+    }
+  }, [visible, group, currentUserName]);
+
+  const splitOptions: ReadonlyArray<SegmentOption<SplitType>> = [
+    { value: 'equal', label: t('expense.splitEqual', 'সমান ভাগ') },
+    { value: 'percentage', label: t('expense.splitPercentage', 'শতাংশ') },
+    { value: 'custom', label: t('expense.splitCustom', 'নির্দিষ্ট') },
+  ];
+
+  const handleSave = () => {
+    const trimmedProjectName = projectName.trim();
+    if (!trimmedProjectName) {
+      haptics.error();
+      return;
+    }
+
+    haptics.success();
+
+    // 1. Update Project / Group details
+    updateGroup(group.id, {
+      name: trimmedProjectName,
+      description: description.trim(),
+      defaultSplitType: splitType,
+    });
+
+    // 2. Update User Name if changed
+    const trimmedUserName = userName.trim();
+    if (trimmedUserName && trimmedUserName !== currentUserName) {
+      setGlobalUserName(trimmedUserName);
+    }
+
+    onClose();
+  };
+
+  return (
+    <BottomSheetModal visible={visible} onClose={onClose}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <View style={styles.headerIconContainer}>
+            <Settings2 size={22} color={theme.colors.primary} />
+          </View>
+          <View style={styles.headerTextGroup}>
+            <Text variant="heading" style={styles.headerTitle}>
+              {t('home.editProject', 'প্রজেক্ট সম্পাদনা')}
+            </Text>
+            <Text variant="caption" tone="secondary">
+              {t('home.editProjectSubtitle', 'প্রজেক্টের তথ্য ও স্প্লিট নিয়ম পরিবর্তন করুন')}
+            </Text>
+          </View>
+        </View>
+
+        <Pressable
+          onPress={onClose}
+          hitSlop={10}
+          style={({ pressed }) => [styles.closeButton, pressed && styles.buttonPressed]}
+          accessibilityLabel={t('common.close', 'বন্ধ করুন')}
+        >
+          <X size={18} color={theme.colors.textSecondary} />
+        </Pressable>
+      </View>
+
+      {/* Form Content */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.form}>
+          {/* 1. Project / Group Name */}
+          <TextField
+            label={t('home.projectNamePrompt', 'গ্রুপ / প্রজেক্টের নাম')}
+            value={projectName}
+            onChangeText={setProjectName}
+            placeholder={t('home.projectNamePlaceholder', 'যেমন: সাজেক ট্যুর')}
+            maxLength={50}
+          />
+
+          {/* 2. User's Name */}
+          <TextField
+            label={t('home.userNamePrompt', 'আপনার নাম')}
+            value={userName}
+            onChangeText={setUserName}
+            placeholder={t('home.userNamePlaceholder', 'যেমন: মাকসুদ')}
+            maxLength={40}
+          />
+
+          {/* 3. Project Description */}
+          <TextField
+            label={t('home.projectDescPrompt', 'প্রজেক্ট ডেস্ক্রিপশন')}
+            value={description}
+            onChangeText={setDescription}
+            placeholder={t('home.projectDescPlaceholder', 'যেমন: বন্ধুদের সাথে ঘোরাঘুরির খরচ ও হিসাব…')}
+            maxLength={120}
+          />
+
+          {/* 4. Splitting Method */}
+          <View style={styles.splitSection}>
+            <Text variant="label" tone="secondary" style={styles.fieldLabel}>
+              {t('home.splitMethodPrompt', 'প্রজেক্ট স্প্লিটিং মেথড')}
+            </Text>
+            <SegmentedControl
+              options={splitOptions}
+              value={splitType}
+              onChange={setSplitType}
+            />
+          </View>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Button
+            label={t('common.save', 'সংরক্ষণ করুন')}
+            kind="primary"
+            fullWidth
+            onPress={handleSave}
+          />
+        </View>
+      </ScrollView>
+    </BottomSheetModal>
+  );
+}
+
+const styles = StyleSheet.create((theme) => ({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    marginBottom: theme.spacing.lg,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    flex: 1,
+  },
+  headerIconContainer: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: theme.colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTextGroup: {
+    flex: 1,
+    gap: 2,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.colors.text,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.isDark ? theme.colors.card : '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  buttonPressed: {
+    opacity: 0.7,
+  },
+  scrollContent: {
+    paddingBottom: 20,
+  },
+  form: {
+    gap: theme.spacing.md,
+  },
+  splitSection: {
+    gap: theme.spacing.xs,
+  },
+  fieldLabel: {
+    marginBottom: 4,
+  },
+  footer: {
+    marginTop: theme.spacing.xl,
+  },
+}));

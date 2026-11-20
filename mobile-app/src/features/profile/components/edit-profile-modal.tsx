@@ -1,12 +1,12 @@
 import { UserPen, X } from 'lucide-react-native';
 import { useState } from 'react';
-import { Modal, Pressable, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useTranslation } from 'react-i18next';
 
 import { haptics } from '@/shared/lib/haptics';
 import { useBontonStore } from '@/shared/store/bonton-store';
-import { Button, Text, TextField } from '@/shared/ui';
+import { BottomSheetModal, Button, Text, TextField } from '@/shared/ui';
 
 interface EditProfileModalProps {
   visible: boolean;
@@ -32,17 +32,8 @@ export function EditProfileModal({ visible, onClose }: EditProfileModalProps) {
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View style={styles.backdrop}>
-        <Pressable style={styles.dismissArea} onPress={onClose} />
-
-        <View style={styles.sheet}>
-          {/* Header */}
+    <BottomSheetModal visible={visible} onClose={onClose}>
+      {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={styles.headerIconContainer}>
@@ -70,63 +61,43 @@ export function EditProfileModal({ visible, onClose }: EditProfileModalProps) {
             </Pressable>
           </View>
 
-          {/* Form */}
-          <View style={styles.form}>
-            <TextField
-              label={t('profile.namePrompt')}
-              value={name}
-              onChangeText={setName}
-              placeholder="যেমন: মাকসুদ"
-              autoFocus
-            />
+      {/* Form & Footer inside keyboard-scrollable container */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
+        <View style={styles.form}>
+          <TextField
+            label={t('profile.namePrompt')}
+            value={name}
+            onChangeText={setName}
+            placeholder="যেমন: মাকসুদ"
+            autoFocus
+          />
 
-            <TextField
-              label={t('profile.bioPrompt')}
-              value={bio}
-              onChangeText={setBio}
-              placeholder="আপনার ছোট স্লোগান বা স্ট্যাটাস"
-            />
-          </View>
-
-          {/* Footer */}
-          <View style={styles.footer}>
-            <Button
-              label={t('common.save')}
-              kind="primary"
-              fullWidth
-              onPress={handleSave}
-            />
-          </View>
+          <TextField
+            label={t('profile.bioPrompt')}
+            value={bio}
+            onChangeText={setBio}
+            placeholder="আপনার ছোট স্লোগান বা স্ট্যাটাস"
+          />
         </View>
-      </View>
-    </Modal>
+
+        <View style={styles.footer}>
+          <Button
+            label={t('common.save')}
+            kind="primary"
+            fullWidth
+            onPress={handleSave}
+          />
+        </View>
+      </ScrollView>
+    </BottomSheetModal>
   );
 }
 
 const styles = StyleSheet.create((theme) => ({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
-    justifyContent: 'flex-end',
-  },
-  dismissArea: {
-    flex: 1,
-  },
-  sheet: {
-    backgroundColor: theme.colors.card,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: theme.spacing.xl,
-    paddingTop: theme.spacing.xl,
-    paddingBottom: Math.max(theme.spacing.xxl, 28),
-    shadowColor: theme.colors.shadow,
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: theme.isDark ? 0.35 : 0.15,
-    shadowRadius: 18,
-    elevation: 20,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,5 +1,5 @@
 import { Camera, Pencil, User } from 'lucide-react-native';
-import { Pressable, View } from 'react-native';
+import { Image, Pressable, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { haptics } from '@/shared/lib/haptics';
@@ -8,25 +8,33 @@ import { Text } from '@/shared/ui';
 
 interface ProfileHeaderCardProps {
   onEditPress: () => void;
+  onAvatarPress: () => void;
 }
 
-export function ProfileHeaderCard({ onEditPress }: ProfileHeaderCardProps) {
+export function ProfileHeaderCard({ onEditPress, onAvatarPress }: ProfileHeaderCardProps) {
   const { theme } = useUnistyles();
   const userName = useBontonStore((s) => s.userName);
   const userBio = useBontonStore((s) => s.userBio);
+  const userAvatar = useBontonStore((s) => s.userAvatar);
 
-  const handleEdit = () => {
+  const handleEditName = () => {
     haptics.tap();
     onEditPress();
   };
 
+  const handleAvatarChange = () => {
+    haptics.tap();
+    onAvatarPress();
+  };
+
   return (
     <View style={styles.container}>
-      {/* Edit pencil button at top right */}
+      {/* Edit pencil button at top right for editing name */}
       <View style={styles.topActionRow}>
         <Pressable
-          onPress={handleEdit}
+          onPress={handleEditName}
           hitSlop={12}
+          accessibilityLabel="Edit name and bio"
           style={({ pressed }) => [
             styles.editIconButton,
             pressed && styles.buttonPressed,
@@ -36,15 +44,29 @@ export function ProfileHeaderCard({ onEditPress }: ProfileHeaderCardProps) {
         </Pressable>
       </View>
 
-      {/* Centered Avatar */}
+      {/* Centered Avatar (Pressable to change photo) */}
       <View style={styles.avatarWrapper}>
-        <View style={styles.avatarCircle}>
-          <User size={54} color={theme.colors.textSecondary} strokeWidth={1.8} />
-        </View>
+        <Pressable
+          onPress={handleAvatarChange}
+          style={({ pressed }) => [
+            styles.avatarCircle,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          {userAvatar?.startsWith('emoji:') ? (
+            <Text style={styles.avatarEmoji}>{userAvatar.replace('emoji:', '')}</Text>
+          ) : userAvatar ? (
+            <Image source={{ uri: userAvatar }} style={styles.avatarImage} />
+          ) : (
+            <User size={54} color={theme.colors.textSecondary} strokeWidth={1.8} />
+          )}
+        </Pressable>
 
         {/* Camera badge at bottom right */}
         <Pressable
-          onPress={handleEdit}
+          onPress={handleAvatarChange}
+          hitSlop={6}
+          accessibilityLabel="Change profile photo"
           style={({ pressed }) => [
             styles.cameraBadge,
             pressed && styles.buttonPressed,
@@ -110,11 +132,20 @@ const styles = StyleSheet.create((theme) => ({
     borderColor: theme.isDark ? theme.colors.border : '#22C55E80',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
     shadowColor: theme.colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: theme.isDark ? 0.4 : 0.08,
     shadowRadius: 10,
     elevation: 4,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 53,
+  },
+  avatarEmoji: {
+    fontSize: 48,
   },
   cameraBadge: {
     position: 'absolute',

@@ -1,12 +1,12 @@
 import { Feather, Moon, Palette, Sun, Trees, Waves, X } from 'lucide-react-native';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useTranslation } from 'react-i18next';
 
 import { haptics } from '@/shared/lib/haptics';
 import { useBontonStore } from '@/shared/store/bonton-store';
 import type { ThemeName } from '@/shared/theme/themes';
-import { Button, Text } from '@/shared/ui';
+import { BottomSheetModal, Button, Text } from '@/shared/ui';
 
 interface ThemeModalProps {
   visible: boolean;
@@ -80,147 +80,112 @@ export function ThemeModal({ visible, onClose }: ThemeModalProps) {
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View style={styles.backdrop}>
-        <Pressable style={styles.dismissArea} onPress={onClose} />
+    <BottomSheetModal visible={visible} onClose={onClose}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <View style={styles.headerIconContainer}>
+            <Palette size={22} color={theme.colors.primary} />
+          </View>
+          <View style={styles.headerTextGroup}>
+            <Text variant="heading" style={styles.headerTitle}>
+              {t('profile.themeModalTitle')}
+            </Text>
+            <Text variant="caption" tone="secondary">
+              {t('profile.themeModalSubtitle')}
+            </Text>
+          </View>
+        </View>
 
-        <View style={styles.sheet}>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <View style={styles.headerIconContainer}>
-                <Palette size={22} color={theme.colors.primary} />
-              </View>
-              <View style={styles.headerTextGroup}>
-                <Text variant="heading" style={styles.headerTitle}>
-                  {t('profile.themeModalTitle')}
-                </Text>
-                <Text variant="caption" tone="secondary">
-                  {t('profile.themeModalSubtitle')}
-                </Text>
-              </View>
-            </View>
+        <Pressable
+          onPress={onClose}
+          hitSlop={10}
+          style={({ pressed }) => [
+            styles.closeButton,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <X size={18} color={theme.colors.textSecondary} />
+        </Pressable>
+      </View>
 
+      {/* Theme list */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+      >
+        {THEME_OPTIONS.map((item) => {
+          const isSelected = activeTheme === item.id;
+          const Icon = item.icon;
+
+          return (
             <Pressable
-              onPress={onClose}
-              hitSlop={10}
+              key={item.id}
+              onPress={() => handleSelectTheme(item.id)}
               style={({ pressed }) => [
-                styles.closeButton,
+                styles.optionItem,
+                isSelected && styles.optionItemSelected,
                 pressed && styles.buttonPressed,
               ]}
             >
-              <X size={18} color={theme.colors.textSecondary} />
-            </Pressable>
-          </View>
-
-          {/* Theme list */}
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-          >
-            {THEME_OPTIONS.map((item) => {
-              const isSelected = activeTheme === item.id;
-              const Icon = item.icon;
-
-              return (
-                <Pressable
-                  key={item.id}
-                  onPress={() => handleSelectTheme(item.id)}
-                  style={({ pressed }) => [
-                    styles.optionItem,
-                    isSelected && styles.optionItemSelected,
-                    pressed && styles.buttonPressed,
+              <View style={styles.optionLeft}>
+                <View
+                  style={[
+                    styles.optionIconContainer,
+                    isSelected && styles.optionIconContainerSelected,
                   ]}
                 >
-                  <View style={styles.optionLeft}>
-                    <View
-                      style={[
-                        styles.optionIconContainer,
-                        isSelected && styles.optionIconContainerSelected,
-                      ]}
-                    >
-                      <Icon
-                        size={20}
-                        color={
-                          isSelected ? theme.colors.primary : theme.colors.textSecondary
-                        }
-                      />
-                    </View>
-                    <View style={styles.optionTextGroup}>
-                      <Text
-                        variant="body"
-                        style={[
-                          styles.optionTitle,
-                          isSelected && styles.optionTitleSelected,
-                        ]}
-                      >
-                        {t(item.nameKey)}
-                      </Text>
-                      <Text variant="caption" tone="secondary">
-                        {t(item.descKey)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Radio Indicator */}
-                  <View
+                  <Icon
+                    size={20}
+                    color={
+                      isSelected ? theme.colors.primary : theme.colors.textSecondary
+                    }
+                  />
+                </View>
+                <View style={styles.optionTextGroup}>
+                  <Text
+                    variant="body"
                     style={[
-                      styles.radioCircle,
-                      isSelected && styles.radioCircleSelected,
+                      styles.optionTitle,
+                      isSelected && styles.optionTitleSelected,
                     ]}
                   >
-                    {isSelected && <View style={styles.radioDot} />}
-                  </View>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+                    {t(item.nameKey)}
+                  </Text>
+                  <Text variant="caption" tone="secondary">
+                    {t(item.descKey)}
+                  </Text>
+                </View>
+              </View>
 
-          {/* Bottom Complete Button */}
-          <View style={styles.footer}>
-            <Button
-              label={t('profile.done')}
-              kind="primary"
-              fullWidth
-              onPress={handleDone}
-            />
-          </View>
-        </View>
+              {/* Radio Indicator */}
+              <View
+                style={[
+                  styles.radioCircle,
+                  isSelected && styles.radioCircleSelected,
+                ]}
+              >
+                {isSelected && <View style={styles.radioDot} />}
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {/* Bottom Complete Button */}
+      <View style={styles.footer}>
+        <Button
+          label={t('profile.done')}
+          kind="primary"
+          fullWidth
+          onPress={handleDone}
+        />
       </View>
-    </Modal>
+    </BottomSheetModal>
   );
 }
 
 const styles = StyleSheet.create((theme) => ({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
-    justifyContent: 'flex-end',
-  },
-  dismissArea: {
-    flex: 1,
-  },
-  sheet: {
-    backgroundColor: theme.colors.card,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: theme.spacing.xl,
-    paddingTop: theme.spacing.xl,
-    paddingBottom: Math.max(theme.spacing.xxl, 28),
-    maxHeight: '85%',
-    shadowColor: theme.colors.shadow,
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: theme.isDark ? 0.35 : 0.15,
-    shadowRadius: 18,
-    elevation: 20,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

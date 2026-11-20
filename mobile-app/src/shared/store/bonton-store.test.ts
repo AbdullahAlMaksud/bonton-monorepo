@@ -218,10 +218,13 @@ describe('dashboard and settings', () => {
     expect(saved.version).toBe(1);
     expect(Object.keys(saved.state).sort()).toEqual([
       'currency',
+      'defaultSplitType',
       'font',
       'groups',
+      'hasCompletedOnboarding',
       'language',
       'theme',
+      'userAvatar',
       'userBio',
       'userName',
     ]);

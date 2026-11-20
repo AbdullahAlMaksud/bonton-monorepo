@@ -1,5 +1,5 @@
 import { Coins, X } from 'lucide-react-native';
-import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useTranslation } from 'react-i18next';
 
@@ -7,7 +7,7 @@ import { haptics } from '@/shared/lib/haptics';
 import { CURRENCIES } from '@/shared/lib/money';
 import { useBontonStore } from '@/shared/store/bonton-store';
 import { CURRENCY_CODES, type CurrencyCode } from '@/shared/types/bonton';
-import { Button, Text } from '@/shared/ui';
+import { BottomSheetModal, Button, Text } from '@/shared/ui';
 
 interface CurrencyModalProps {
   visible: boolean;
@@ -31,17 +31,8 @@ export function CurrencyModal({ visible, onClose }: CurrencyModalProps) {
   };
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View style={styles.backdrop}>
-        <Pressable style={styles.dismissArea} onPress={onClose} />
-
-        <View style={styles.sheet}>
-          {/* Header */}
+    <BottomSheetModal visible={visible} onClose={onClose}>
+      {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerLeft}>
               <View style={styles.headerIconContainer}>
@@ -140,37 +131,11 @@ export function CurrencyModal({ visible, onClose }: CurrencyModalProps) {
               onPress={handleDone}
             />
           </View>
-        </View>
-      </View>
-    </Modal>
+    </BottomSheetModal>
   );
 }
 
 const styles = StyleSheet.create((theme) => ({
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
-    justifyContent: 'flex-end',
-  },
-  dismissArea: {
-    flex: 1,
-  },
-  sheet: {
-    backgroundColor: theme.colors.card,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: theme.spacing.xl,
-    paddingTop: theme.spacing.xl,
-    paddingBottom: Math.max(theme.spacing.xxl, 28),
-    maxHeight: '85%',
-    shadowColor: theme.colors.shadow,
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: theme.isDark ? 0.35 : 0.15,
-    shadowRadius: 18,
-    elevation: 20,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

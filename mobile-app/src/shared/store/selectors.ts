@@ -37,6 +37,15 @@ export function useGroup(groupId: GroupId | undefined): Group | undefined {
   return useBontonStore((state) => state.groups.find((g) => g.id === groupId));
 }
 
+export function useActiveGroup(): Group | undefined {
+  const groups = useBontonStore((state) => state.groups);
+  const activeGroupId = useBontonStore((state) => state.activeGroupId);
+  return useMemo(() => {
+    if (!groups.length) return undefined;
+    return groups.find((g) => g.id === activeGroupId) ?? groups[0];
+  }, [groups, activeGroupId]);
+}
+
 export function useGroupBalances(group: Group | undefined): MemberBalance[] {
   return useMemo(() => (group ? computeGroupBalances(group) : []), [group]);
 }

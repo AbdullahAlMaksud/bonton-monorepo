@@ -10,3 +10,5 @@ export { ThemeModal } from './theme-modal';
 export { FontModal } from './font-modal';
 export { CurrencyModal } from './currency-modal';
 export { EditProfileModal } from './edit-profile-modal';
+export { AvatarModal } from './avatar-modal';
+export { SplitModal } from './split-modal';

@@ -28,6 +28,13 @@
       "expo-router",
       "react-native-edge-to-edge",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you set a profile avatar.",
+          "cameraPermission": "The app accesses your camera to let you take a profile photo."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#FFFFFF",

@@ -13,10 +13,12 @@ import {
 import {
   formatBps,
   formatMoney,
+  localizeDigits,
   minorToInputString,
   parseMinorUnits,
   sanitizeDecimalInput,
   toAsciiDigits,
+  toBengaliDigits,
 } from './money';
 
 const sum = (values: readonly number[]) => values.reduce((a, b) => a + b, 0);
@@ -462,5 +464,10 @@ describe('money formatting and parsing', () => {
     expect(formatMoney(-5_000, 'EUR', 'en')).toBe('-€50');
     expect(formatBps(3_333, 'en')).toBe('33.33');
     expect(formatBps(5_000, 'bn')).toBe('৫০');
+    expect(toBengaliDigits(688)).toBe('৬৮৮');
+    expect(toBengaliDigits('154')).toBe('১৫৪');
+    expect(localizeDigits('2 Person', 'bn')).toBe('২ Person');
+    expect(localizeDigits(0, 'bn')).toBe('০');
+    expect(localizeDigits(688, 'en')).toBe('688');
   });
 });

@@ -10,14 +10,39 @@ import { Text } from '@/shared/ui';
 
 interface ProfilePreferencesCardProps {
   onOpenCurrencyModal?: () => void;
+  onOpenSplitModal?: () => void;
 }
 
-export function ProfilePreferencesCard({ onOpenCurrencyModal }: ProfilePreferencesCardProps) {
+export function ProfilePreferencesCard({
+  onOpenCurrencyModal,
+  onOpenSplitModal,
+}: ProfilePreferencesCardProps) {
   const { t } = useTranslation();
   const { theme } = useUnistyles();
   const currency = useBontonStore((s) => s.currency);
+  const defaultSplitType = useBontonStore((s) => s.defaultSplitType);
 
   const currencySymbol = `${CURRENCIES[currency].symbol} (${currency})`;
+
+  const splitLabel = (() => {
+    switch (defaultSplitType) {
+      case 'equal':
+        return t('profile.splitEqualTitle', 'সমান ভাগ');
+      case 'percentage':
+        return t('profile.splitPercentageTitle', 'শতাংশ অনুযায়ী');
+      case 'custom':
+        return t('profile.splitCustomTitle', 'কাস্টম');
+      default:
+        return t('profile.splitEqualTitle', 'সমান ভাগ');
+    }
+  })();
+
+  const handlePressSplit = () => {
+    if (onOpenSplitModal) {
+      haptics.tap();
+      onOpenSplitModal();
+    }
+  };
 
   const handlePressCurrency = () => {
     if (onOpenCurrencyModal) {
@@ -33,19 +58,30 @@ export function ProfilePreferencesCard({ onOpenCurrencyModal }: ProfilePreferenc
       </Text>
 
       <View style={styles.card}>
-        {/* Row 1: Split Mode */}
-        <View style={styles.row}>
+        {/* Row 1: Split Mode (Pressable to configure central default split rule) */}
+        <Pressable
+          onPress={handlePressSplit}
+          style={({ pressed }) => [
+            styles.row,
+            pressed && styles.rowPressed,
+          ]}
+        >
           <Text variant="body" style={styles.rowLabel}>
             {t('profile.splitMode')}
           </Text>
 
-          <View style={styles.badge}>
-            <Check size={12} color={theme.colors.success} strokeWidth={2.6} />
-            <Text variant="caption" style={styles.badgeText}>
-              {t('profile.splitModeValue')}
-            </Text>
+          <View style={styles.rowRight}>
+            <View style={styles.badge}>
+              <Check size={12} color={theme.colors.success} strokeWidth={2.6} />
+              <Text variant="caption" style={styles.badgeText}>
+                {splitLabel}
+              </Text>
+            </View>
+            {onOpenSplitModal && (
+              <ChevronRight size={18} color={theme.colors.textSecondary} />
+            )}
           </View>
-        </View>
+        </Pressable>
 
         <View style={styles.divider} />
 
@@ -61,7 +97,7 @@ export function ProfilePreferencesCard({ onOpenCurrencyModal }: ProfilePreferenc
             {t('profile.currency')}
           </Text>
 
-          <View style={styles.currencyRight}>
+          <View style={styles.rowRight}>
             <Text variant="label" tone="secondary">
               {currencySymbol}
             </Text>
@@ -109,7 +145,7 @@ const styles = StyleSheet.create((theme) => ({
   rowLabel: {
     fontWeight: theme.typography.weight.medium,
   },
-  currencyRight: {
+  rowRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,

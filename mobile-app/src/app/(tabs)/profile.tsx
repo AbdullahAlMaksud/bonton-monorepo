@@ -5,6 +5,7 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { DotBackground } from '@/features/dashboard/components';
 import {
+  AvatarModal,
   CurrencyModal,
   EditProfileModal,
   FontModal,
@@ -13,6 +14,7 @@ import {
   ProfileLanguageCard,
   ProfilePreferencesCard,
   ProfileThemeFontCard,
+  SplitModal,
   ThemeModal,
 } from '@/features/profile/components';
 
@@ -24,6 +26,8 @@ export default function ProfileScreen() {
   const [fontModalVisible, setFontModalVisible] = useState(false);
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [splitModalVisible, setSplitModalVisible] = useState(false);
+  const [avatarModalVisible, setAvatarModalVisible] = useState(false);
 
   return (
     <View style={styles.root}>
@@ -40,15 +44,19 @@ export default function ProfileScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* 1. Header with Avatar, Pencil Edit, Camera badge, Name & Subtitle */}
-        <ProfileHeaderCard onEditPress={() => setEditModalVisible(true)} />
+        {/* 1. Header with Avatar (photo change), Pencil Edit (name edit), Camera badge, Name & Subtitle */}
+        <ProfileHeaderCard
+          onEditPress={() => setEditModalVisible(true)}
+          onAvatarPress={() => setAvatarModalVisible(true)}
+        />
 
         {/* 2. Language Selection Card */}
         <ProfileLanguageCard />
 
-        {/* 3. Preferences Card (with Currency selection) */}
+        {/* 3. Preferences Card (with Currency and Central Split Rule selection) */}
         <ProfilePreferencesCard
           onOpenCurrencyModal={() => setCurrencyModalVisible(true)}
+          onOpenSplitModal={() => setSplitModalVisible(true)}
         />
 
         {/* 4. Theme and Font Settings Card */}
@@ -77,6 +85,18 @@ export default function ProfileScreen() {
       <CurrencyModal
         visible={currencyModalVisible}
         onClose={() => setCurrencyModalVisible(false)}
+      />
+
+      {/* Default Split Rule Modal */}
+      <SplitModal
+        visible={splitModalVisible}
+        onClose={() => setSplitModalVisible(false)}
+      />
+
+      {/* Avatar Change Modal */}
+      <AvatarModal
+        visible={avatarModalVisible}
+        onClose={() => setAvatarModalVisible(false)}
       />
 
       {/* Profile Edit Modal */}
