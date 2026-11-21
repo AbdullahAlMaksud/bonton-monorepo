@@ -119,19 +119,6 @@ export default function HomeScreen() {
     });
   };
 
-  // Build the participant names subtitle string matching the screenshot
-  const participantNames = activeGroup
-    ? activeGroup.members
-      .map((m) => (m.isMe ? userName || 'Abdullah Al Maksud' : m.name))
-      .join(' ')
-    : '';
-
-  // Repeating participant names if short, to achieve the multi-line member list seen in the wireframe
-  const repeatedParticipantNames =
-    participantNames.length > 0 && participantNames.length < 80
-      ? `${participantNames} ${participantNames} ${participantNames}`
-      : participantNames;
-
   const totalExpenseWhole = Math.round(totalSpent / 100);
   const participantCount = activeGroup?.members.length ?? 0;
 
@@ -312,13 +299,12 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* Project Description or Participants Subtitle */}
-          <Text style={styles.participantsSubtitle} numberOfLines={3}>
-            {activeGroup?.description
-              ? `${activeGroup.description}`
-              : repeatedParticipantNames ||
-              'Abdullah Al Maksud Tanvir Rahim Karim Abdullah Al Maksud Tanvir Rahim Karim'}
-          </Text>
+          {/* Project Description (e.g. date range) */}
+          {activeGroup?.description ? (
+            <Text style={styles.participantsSubtitle} numberOfLines={2}>
+              {activeGroup.description}
+            </Text>
+          ) : null}
 
           {/* Floating Summary Stats Card with Native Glass Effect */}
           <View style={styles.summaryCardWrapper}>

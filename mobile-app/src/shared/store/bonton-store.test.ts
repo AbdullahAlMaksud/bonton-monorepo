@@ -58,6 +58,17 @@ describe('groups and members', () => {
     expect(addMember('nope', 'X')).toEqual({ ok: false, reason: 'not_found' });
   });
 
+  test('updateMemberName updates member name and rejects empty or duplicate', () => {
+    const { groupId, rakib } = setupTrip();
+    const { updateMemberName } = useStore.getState();
+    expect(updateMemberName(groupId, rakib.id, '  ')).toBe(false);
+    expect(updateMemberName(groupId, rakib.id, 'Nila')).toBe(false);
+    expect(updateMemberName(groupId, rakib.id, 'Tanvir')).toBe(true);
+
+    const group = useStore.getState().groups.find((g) => g.id === groupId) as Group;
+    expect(group.members.find((m) => m.id === rakib.id)?.name).toBe('Tanvir');
+  });
+
   test('updateGroup and deleteGroup', () => {
     const { groupId } = setupTrip();
     useStore.getState().updateGroup(groupId, { name: '  Sylhet  ', icon: 'home' });

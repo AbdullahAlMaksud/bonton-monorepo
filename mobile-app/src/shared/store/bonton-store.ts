@@ -84,6 +84,7 @@ export interface BontonState {
   addMember: (groupId: GroupId, name: string) => AddMemberResult;
   /** Removes the member and re-splits every affected expense (see rebalanceExpenseAfterRemoval). */
   removeMember: (groupId: GroupId, memberId: MemberId) => RemoveMemberResult;
+  updateMemberName: (groupId: GroupId, memberId: MemberId, name: string) => boolean;
 
   addExpense: (groupId: GroupId, input: ExpenseInput) => ExpenseOutcome;
   updateExpense: (groupId: GroupId, expenseId: ExpenseId, input: ExpenseInput) => ExpenseOutcome;
@@ -158,29 +159,41 @@ type PersistedState = Pick<
 >;
 
 export const INITIAL_DEMO_GROUP: Group = {
-  id: 'g_sajek_tour',
-  name: 'Sajek Tour',
-  icon: 'plane',
+  id: 'g_demo_ratargul',
+  name: 'রাতারগুল ট্রিপের খরচ',
+  description: '২৭ নভেম্বর — ১ ডিসেম্বর ২০২৬',
+  icon: 'wallet',
   defaultSplitType: 'equal',
   members: [
     { id: 'm_me', name: 'Abdullah Al Maksud', isMe: true },
-    { id: 'm_tanvir', name: 'Tanvir', isMe: false },
-    { id: 'm_rahim', name: 'Rahim', isMe: false },
-    { id: 'm_karim', name: 'Karim', isMe: false },
+    { id: 'm_faisal', name: 'ফয়সাল', isMe: false },
   ],
   expenses: [
     {
-      id: 'e_sajek_1',
-      title: 'Resort & Food',
-      amount: 128700,
-      payers: [{ memberId: 'm_me', amount: 128700 }],
+      id: 'e_demo_1',
+      title: 'নিউ কাসল',
+      amount: 143200,
+      payers: [{ memberId: 'm_faisal', amount: 143200 }],
       personalBills: [],
       split: {
         type: 'equal',
-        participantIds: ['m_me', 'm_tanvir', 'm_rahim', 'm_karim'],
+        participantIds: ['m_me', 'm_faisal'],
       },
       createdAt: 1731900000000,
       updatedAt: 1731900000000,
+    },
+    {
+      id: 'e_demo_2',
+      title: 'নৌকা ভাড়া ও নাস্তা',
+      amount: 68800,
+      payers: [{ memberId: 'm_me', amount: 68800 }],
+      personalBills: [],
+      split: {
+        type: 'equal',
+        participantIds: ['m_me', 'm_faisal'],
+      },
+      createdAt: 1731850000000,
+      updatedAt: 1731850000000,
     },
   ],
   createdAt: 1731800000000,
@@ -320,6 +333,38 @@ export const useBontonStore = create<BontonState>()(
           })),
         }));
         return { ok: true, balance };
+      },
+
+      updateMemberName: (groupId, memberId, newName) => {
+        const cleaned = cleanName(newName);
+        if (!cleaned) return false;
+
+        const group = get().groups.find((g) => g.id === groupId);
+        if (!group) return false;
+
+        const key = nameKey(cleaned);
+        const duplicate = group.members.some(
+          (m) => m.id !== memberId && nameKey(m.name) === key,
+        );
+        if (duplicate) return false;
+
+        const now = Date.now();
+        set((state) => ({
+          groups: mapGroup(state.groups, groupId, (g) => ({
+            ...g,
+            members: g.members.map((m) =>
+              m.id === memberId ? { ...m, name: cleaned } : m,
+            ),
+            updatedAt: now,
+          })),
+        }));
+
+        const target = group.members.find((m) => m.id === memberId);
+        if (target?.isMe) {
+          set({ userName: cleaned });
+        }
+
+        return true;
       },
 
       addExpense: (groupId, input) => {
