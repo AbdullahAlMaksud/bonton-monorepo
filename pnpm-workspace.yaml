@@ -2,7 +2,6 @@ packages:
   - 'landing-portal'
   - 'admin-portal'
   - 'server'
-  - 'mobile-app'
   - 'apps/*'
   - 'packages/*'
 
