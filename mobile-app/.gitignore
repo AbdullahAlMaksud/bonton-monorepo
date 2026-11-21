@@ -13,6 +13,9 @@ npm-debug.*
 # OSX
 .DS_Store
 
+/android
+/ios
+
 # Android & iOS local build artifacts
 android/.gradle/
 android/app/build/

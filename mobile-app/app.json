@@ -8,11 +8,6 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "icon": "./public/logo/logo-white.png",
-    "splash": {
-      "image": "./public/logo/adaptive-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
-    },
     "ios": {
       "bundleIdentifier": "com.bonton.app",
       "supportsTablet": true,
