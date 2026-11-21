@@ -25,56 +25,8 @@ export function ProfileLanguageCard() {
       </Text>
 
       <View style={styles.card}>
-        {/* Bengali Option */}
-        <Pressable
-          onPress={() => handleSelectLanguage('bn')}
-          style={({ pressed }) => [
-            styles.optionRow,
-            activeLanguage === 'bn' && styles.optionRowActive,
-            pressed && styles.rowPressed,
-          ]}
-        >
-          <View style={styles.optionLeft}>
-            <View
-              style={[
-                styles.langBadge,
-                activeLanguage === 'bn' && styles.langBadgeActive,
-              ]}
-            >
-              <Text
-                variant="caption"
-                style={[
-                  styles.langBadgeText,
-                  activeLanguage === 'bn' && styles.langBadgeTextActive,
-                ]}
-              >
-                BN
-              </Text>
-            </View>
 
-            <View style={styles.textGroup}>
-              <Text variant="body" style={styles.optionTitle}>
-                {t('profile.bangla')}
-              </Text>
-              <Text variant="caption" tone="secondary">
-                {t('profile.banglaSubtitle')}
-              </Text>
-            </View>
-          </View>
 
-          {/* Radio button */}
-          <View
-            style={[
-              styles.radioCircle,
-              activeLanguage === 'bn' && styles.radioCircleActive,
-            ]}
-          >
-            {activeLanguage === 'bn' && <View style={styles.radioDot} />}
-          </View>
-        </Pressable>
-
-        {/* Divider */}
-        <View style={styles.divider} />
 
         {/* English Option */}
         <Pressable
@@ -107,9 +59,6 @@ export function ProfileLanguageCard() {
               <Text variant="body" style={styles.optionTitle}>
                 {t('profile.english')}
               </Text>
-              <Text variant="caption" tone="secondary">
-                {t('profile.englishSubtitle')}
-              </Text>
             </View>
           </View>
 
@@ -123,6 +72,56 @@ export function ProfileLanguageCard() {
             {activeLanguage === 'en' && <View style={styles.radioDot} />}
           </View>
         </Pressable>
+
+        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Bengali Option */}
+        <Pressable
+          onPress={() => handleSelectLanguage('bn')}
+          style={({ pressed }) => [
+            styles.optionRow,
+            activeLanguage === 'bn' && styles.optionRowActive,
+            pressed && styles.rowPressed,
+          ]}
+        >
+          <View style={styles.optionLeft}>
+            <View
+              style={[
+                styles.langBadge,
+                activeLanguage === 'bn' && styles.langBadgeActive,
+              ]}
+            >
+              <Text
+                variant="caption"
+                style={[
+                  styles.langBadgeText,
+                  activeLanguage === 'bn' && styles.langBadgeTextActive,
+                ]}
+              >
+                BN
+              </Text>
+            </View>
+
+            <View style={styles.textGroup}>
+              <Text variant="body" style={styles.optionTitle}>
+                {t('profile.bangla')}
+              </Text>
+            </View>
+          </View>
+
+          {/* Radio button */}
+          <View
+            style={[
+              styles.radioCircle,
+              activeLanguage === 'bn' && styles.radioCircleActive,
+            ]}
+          >
+            {activeLanguage === 'bn' && <View style={styles.radioDot} />}
+          </View>
+        </Pressable>
+
+
       </View>
     </View>
   );

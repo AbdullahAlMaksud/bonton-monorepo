@@ -3,8 +3,8 @@ import { initReactI18next } from 'react-i18next';
 
 import type { LangCode } from '@/shared/types/bonton';
 
-import { bn } from './locales/bn';
-import { en } from './locales/en';
+import bn from './locales/bn.json';
+import en from './locales/en.json';
 
 export const DEFAULT_LANGUAGE: LangCode = 'bn';
 

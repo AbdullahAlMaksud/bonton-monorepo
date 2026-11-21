@@ -35,6 +35,13 @@
         }
       ],
       [
+        "expo-media-library",
+        {
+          "photosPermission": "The app accesses your photos to save settlement cards to your gallery.",
+          "savePhotosPermission": "The app accesses your photos to save settlement cards to your gallery."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#FFFFFF",

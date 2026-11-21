@@ -1,6 +1,6 @@
 import { Settings2, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useTranslation } from 'react-i18next';
 
@@ -52,6 +52,7 @@ export function EditProjectModal({ visible, onClose, group }: EditProjectModalPr
   ];
 
   const handleSave = () => {
+    Keyboard.dismiss();
     const trimmedProjectName = projectName.trim();
     if (!trimmedProjectName) {
       haptics.error();
@@ -86,10 +87,10 @@ export function EditProjectModal({ visible, onClose, group }: EditProjectModalPr
           </View>
           <View style={styles.headerTextGroup}>
             <Text variant="heading" style={styles.headerTitle}>
-              {t('home.editProject', 'প্রজেক্ট সম্পাদনা')}
+              {t('home.editProject', 'গ্রুপ সম্পাদনা')}
             </Text>
             <Text variant="caption" tone="secondary">
-              {t('home.editProjectSubtitle', 'প্রজেক্টের তথ্য ও স্প্লিট নিয়ম পরিবর্তন করুন')}
+              {t('home.editProjectSubtitle', 'গ্রুপের তথ্য ও হিসাব নিয়ম পরিবর্তন করুন')}
             </Text>
           </View>
         </View>
@@ -108,13 +109,14 @@ export function EditProjectModal({ visible, onClose, group }: EditProjectModalPr
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         bounces={false}
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.form}>
           {/* 1. Project / Group Name */}
           <TextField
-            label={t('home.projectNamePrompt', 'গ্রুপ / প্রজেক্টের নাম')}
+            label={t('home.projectNamePrompt', 'গ্রুপের নাম')}
             value={projectName}
             onChangeText={setProjectName}
             placeholder={t('home.projectNamePlaceholder', 'যেমন: সাজেক ট্যুর')}
@@ -132,7 +134,7 @@ export function EditProjectModal({ visible, onClose, group }: EditProjectModalPr
 
           {/* 3. Project Description */}
           <TextField
-            label={t('home.projectDescPrompt', 'প্রজেক্ট ডেস্ক্রিপশন')}
+            label={t('home.projectDescPrompt', 'গ্রুপের বিবরণ')}
             value={description}
             onChangeText={setDescription}
             placeholder={t('home.projectDescPlaceholder', 'যেমন: বন্ধুদের সাথে ঘোরাঘুরির খরচ ও হিসাব…')}
@@ -142,7 +144,7 @@ export function EditProjectModal({ visible, onClose, group }: EditProjectModalPr
           {/* 4. Splitting Method */}
           <View style={styles.splitSection}>
             <Text variant="label" tone="secondary" style={styles.fieldLabel}>
-              {t('home.splitMethodPrompt', 'প্রজেক্ট স্প্লিটিং মেথড')}
+              {t('home.splitMethodPrompt', 'গ্রুপের হিসাব পদ্ধতি')}
             </Text>
             <SegmentedControl
               options={splitOptions}
@@ -212,7 +214,7 @@ const styles = StyleSheet.create((theme) => ({
     opacity: 0.7,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 32,
   },
   form: {
     gap: theme.spacing.md,

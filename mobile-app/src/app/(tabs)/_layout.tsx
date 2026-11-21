@@ -45,7 +45,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="projects"
         options={{
-          title: t('tabs.projects', 'Projects'),
+          title: t('tabs.projects', 'Groups'),
         }}
       />
 
@@ -117,11 +117,12 @@ function CustomBottomBarComponent({
       {/* 1. Pill Capsule with Home, Projects & Profile tabs */}
       <View style={styles.capsule} onLayout={handleLayout}>
         <BlurView
-          intensity={Platform.OS === 'ios' ? 80 : 40}
+          intensity={Platform.OS === 'ios' ? 85 : 55}
           tint={theme.isDark ? 'dark' : 'light'}
-          style={RNStyleSheet.absoluteFill}
+          style={[RNStyleSheet.absoluteFill, { borderRadius: theme.radius.pill }]}
         />
         <View style={styles.glassOverlay} />
+        <View style={styles.glassTopShine} pointerEvents="none" />
 
         {/* Sliding active pill indicator */}
         {tabWidth > 0 && (
@@ -137,7 +138,7 @@ function CustomBottomBarComponent({
               : route.name === 'index'
                 ? t('tabs.home', 'Home')
                 : route.name === 'projects'
-                  ? t('tabs.projects', 'Projects')
+                  ? t('tabs.projects', 'Groups')
                   : t('tabs.profile', 'Profile');
 
           const onPress = () => {
@@ -270,21 +271,32 @@ const styles = StyleSheet.create((theme, rt) => ({
     justifyContent: 'space-around',
     paddingHorizontal: theme.spacing.xs,
     paddingVertical: theme.spacing.xs,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor:
-      Platform.OS === 'ios'
-        ? 'transparent'
-        : theme.colors.card,
+    borderWidth: 1.5,
+    borderTopColor: theme.isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.95)',
+    borderBottomColor: theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(203, 213, 225, 0.75)',
+    borderLeftColor: theme.isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(203, 213, 225, 0.75)',
+    borderRightColor: theme.isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(203, 213, 225, 0.75)',
+    backgroundColor: theme.isDark
+      ? 'rgba(24, 24, 27, 0.65)'
+      : 'rgba(255, 255, 255, 0.72)',
     ...theme.shadows.md,
     overflow: 'hidden',
+    position: 'relative',
   },
   glassOverlay: {
     ...RNStyleSheet.absoluteFill,
     backgroundColor: theme.isDark
-      ? 'rgba(24, 24, 27, 0.70)'
-      : theme.colors.card,
-    opacity: 0.85,
+      ? 'rgba(255, 255, 255, 0.03)'
+      : 'rgba(255, 255, 255, 0.18)',
+  },
+  glassTopShine: {
+    position: 'absolute',
+    top: 0,
+    left: 20,
+    right: 20,
+    height: 1.5,
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.22)' : 'rgba(255, 255, 255, 0.80)',
+    borderRadius: 1,
   },
   slidingIndicator: {
     position: 'absolute',
@@ -292,7 +304,9 @@ const styles = StyleSheet.create((theme, rt) => ({
     bottom: theme.spacing.xs,
     left: theme.spacing.xs,
     borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.primaryMuted,
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.10)' : 'rgba(0, 0, 0, 0.06)',
+    borderWidth: 1,
+    borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.60)',
   },
   tabButton: {
     flex: 1,

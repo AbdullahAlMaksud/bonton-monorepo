@@ -26,10 +26,10 @@ function WavyHeaderComponent({
   // Multilayered gradient stops fully bound to active theme colors
   const gradientStops = isDark
     ? {
-      start: theme.colors.card,
-      middle: '#18181B',
-      end: '#27272A',
-      accentWave: theme.colors.accent,
+      start: '#18181B',
+      middle: '#121215',
+      end: '#18181B',
+      accentWave: '#27272A',
     }
     : {
       start: theme.colors.primary,
@@ -66,8 +66,8 @@ function WavyHeaderComponent({
 
           {/* Accent Wave Gradient (lighter accent/secondary) */}
           <LinearGradient id="wavyHeaderAccentGradient" x1="100%" y1="0%" x2="0%" y2="100%">
-            <Stop offset="0%" stopColor={gradientStops.accentWave} stopOpacity="0.60" />
-            <Stop offset="100%" stopColor={gradientStops.middle} stopOpacity="0.15" />
+            <Stop offset="0%" stopColor={gradientStops.accentWave} stopOpacity={isDark ? "0.40" : "0.60"} />
+            <Stop offset="100%" stopColor={gradientStops.middle} stopOpacity={isDark ? "0.10" : "0.15"} />
           </LinearGradient>
         </Defs>
 

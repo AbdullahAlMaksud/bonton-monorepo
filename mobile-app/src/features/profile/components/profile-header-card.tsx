@@ -1,10 +1,10 @@
-import { Camera, Pencil, User } from 'lucide-react-native';
-import { Image, Pressable, View } from 'react-native';
+import { Camera, Pencil } from 'lucide-react-native';
+import { Pressable, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { haptics } from '@/shared/lib/haptics';
 import { useBontonStore } from '@/shared/store/bonton-store';
-import { Text } from '@/shared/ui';
+import { Text, UserAvatar } from '@/shared/ui';
 
 interface ProfileHeaderCardProps {
   onEditPress: () => void;
@@ -49,17 +49,18 @@ export function ProfileHeaderCard({ onEditPress, onAvatarPress }: ProfileHeaderC
         <Pressable
           onPress={handleAvatarChange}
           style={({ pressed }) => [
-            styles.avatarCircle,
+            styles.avatarShadowWrapper,
             pressed && styles.buttonPressed,
           ]}
         >
-          {userAvatar?.startsWith('emoji:') ? (
-            <Text style={styles.avatarEmoji}>{userAvatar.replace('emoji:', '')}</Text>
-          ) : userAvatar ? (
-            <Image source={{ uri: userAvatar }} style={styles.avatarImage} />
-          ) : (
-            <User size={54} color={theme.colors.textSecondary} strokeWidth={1.8} />
-          )}
+          <View style={styles.avatarCircle}>
+            <UserAvatar
+              avatar={userAvatar}
+              size={104}
+              iconSize={54}
+              iconColor={theme.isDark ? theme.colors.text : theme.colors.primary}
+            />
+          </View>
         </Pressable>
 
         {/* Camera badge at bottom right */}
@@ -123,29 +124,26 @@ const styles = StyleSheet.create((theme) => ({
     position: 'relative',
     marginBottom: theme.spacing.md,
   },
-  avatarCircle: {
-    width: 106,
-    height: 106,
-    borderRadius: 53,
-    backgroundColor: theme.colors.card,
-    borderWidth: 2,
-    borderColor: theme.isDark ? theme.colors.border : '#22C55E80',
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+  avatarShadowWrapper: {
+    width: 108,
+    height: 108,
+    borderRadius: 54,
     shadowColor: theme.colors.shadow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: theme.isDark ? 0.4 : 0.08,
     shadowRadius: 10,
     elevation: 4,
   },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 53,
-  },
-  avatarEmoji: {
-    fontSize: 48,
+  avatarCircle: {
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    backgroundColor: theme.colors.card,
+    borderWidth: 2,
+    borderColor: theme.isDark ? theme.colors.border : '#22C55E80',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   cameraBadge: {
     position: 'absolute',

@@ -1,4 +1,10 @@
 export { Avatar } from './avatar';
+export {
+  UserAvatar,
+  AVATAR_PRESETS,
+  AVATAR_ICON_MAP,
+  type UserAvatarProps,
+} from './user-avatar';
 export { BottomSheetModal, type BottomSheetModalProps } from './bottom-sheet-modal';
 export { Button, type ButtonKind, type ButtonProps } from './button';
 export { Card } from './card';

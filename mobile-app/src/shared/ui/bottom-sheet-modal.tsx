@@ -1,11 +1,18 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
-  Dimensions,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import {
   Keyboard,
-  KeyboardAvoidingView,
+  type KeyboardEvent,
   Modal,
   Platform,
   Pressable,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import Animated, {
@@ -15,9 +22,8 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StyleSheet } from 'react-native-unistyles';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export interface BottomSheetModalProps {
   visible: boolean;
@@ -25,6 +31,8 @@ export interface BottomSheetModalProps {
   children: ReactNode;
   maxHeight?: number | `${number}%`;
   height?: number | `${number}%`;
+  keyboardBehavior?: 'padding' | 'height' | 'position';
+  keyboardVerticalOffset?: number;
 }
 
 export function BottomSheetModal({
@@ -33,10 +41,53 @@ export function BottomSheetModal({
   children,
   maxHeight = '85%',
   height,
+  keyboardVerticalOffset = 0,
 }: BottomSheetModalProps) {
+  const { height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const [mounted, setMounted] = useState(visible);
-  const translateY = useSharedValue(SCREEN_HEIGHT);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  const translateY = useSharedValue(screenHeight);
   const backdropOpacity = useSharedValue(0);
+  const animatedKeyboardPadding = useSharedValue(0);
+
+  useEffect(() => {
+    const onKeyboardShow = (e: KeyboardEvent) => {
+      const h = e.endCoordinates.height;
+      setIsKeyboardVisible(true);
+      setKeyboardHeight(h);
+      const targetPadding = Math.max(0, h + keyboardVerticalOffset);
+      animatedKeyboardPadding.value = withTiming(targetPadding, {
+        duration: Platform.OS === 'ios' ? (e.duration || 250) : 220,
+        easing: Easing.out(Easing.cubic),
+      });
+    };
+
+    const onKeyboardHide = (e?: KeyboardEvent) => {
+      setIsKeyboardVisible(false);
+      setKeyboardHeight(0);
+      animatedKeyboardPadding.value = withTiming(0, {
+        duration: Platform.OS === 'ios' ? (e?.duration || 200) : 180,
+        easing: Easing.out(Easing.cubic),
+      });
+    };
+
+    const showSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      onKeyboardShow,
+    );
+    const hideSub = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      onKeyboardHide,
+    );
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, [animatedKeyboardPadding, keyboardVerticalOffset]);
 
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -70,7 +121,7 @@ export function BottomSheetModal({
     isShownRef.current = false;
     isAnimatingRef.current = true;
     translateY.value = withTiming(
-      SCREEN_HEIGHT,
+      screenHeight,
       {
         duration: 250,
         easing: Easing.bezier(0.4, 0, 1, 1),
@@ -85,7 +136,7 @@ export function BottomSheetModal({
       duration: 200,
       easing: Easing.bezier(0.4, 0, 1, 1),
     });
-  }, [finishClose, translateY, backdropOpacity]);
+  }, [finishClose, translateY, backdropOpacity, screenHeight]);
 
   useEffect(() => {
     let raf: number | null = null;
@@ -93,7 +144,7 @@ export function BottomSheetModal({
       if (!isShownRef.current && !isAnimatingRef.current) {
         isAnimatingRef.current = true;
         setMounted(true);
-        translateY.value = SCREEN_HEIGHT;
+        translateY.value = screenHeight;
         backdropOpacity.value = 0;
         raf = requestAnimationFrame(() => {
           startOpenAnimation();
@@ -107,7 +158,36 @@ export function BottomSheetModal({
     return () => {
       if (raf !== null) cancelAnimationFrame(raf);
     };
-  }, [visible, startOpenAnimation, handleDismiss, translateY, backdropOpacity]);
+  }, [visible, startOpenAnimation, handleDismiss, translateY, backdropOpacity, screenHeight]);
+
+  // Compute safe maxHeight: if keyboard is open, constrain the modal so it never goes off-screen
+  const resolvedMaxHeight = useMemo(() => {
+    if (height !== undefined) {
+      if (isKeyboardVisible && keyboardHeight > 0) {
+        const topSafe = Math.max(insets.top, 24);
+        const availableHeight = screenHeight - keyboardHeight - topSafe - 16;
+        const baseHeight =
+          typeof height === 'number'
+            ? height
+            : (parseFloat(height) / 100) * screenHeight;
+        return Math.min(baseHeight, Math.max(220, availableHeight));
+      }
+      return height;
+    }
+
+    const baseMax =
+      typeof maxHeight === 'number'
+        ? maxHeight
+        : (parseFloat(maxHeight) / 100) * screenHeight;
+
+    if (isKeyboardVisible && keyboardHeight > 0) {
+      const topSafe = Math.max(insets.top, 24);
+      const availableHeight = screenHeight - keyboardHeight - topSafe - 16;
+      return Math.min(baseMax, Math.max(220, availableHeight));
+    }
+
+    return maxHeight;
+  }, [height, maxHeight, isKeyboardVisible, keyboardHeight, screenHeight, insets.top]);
 
   const backdropAnimatedStyle = useAnimatedStyle(() => ({
     opacity: backdropOpacity.value,
@@ -115,6 +195,10 @@ export function BottomSheetModal({
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
+  }));
+
+  const keyboardAnimatedStyle = useAnimatedStyle(() => ({
+    paddingBottom: animatedKeyboardPadding.value,
   }));
 
   if (!mounted) return null;
@@ -133,29 +217,33 @@ export function BottomSheetModal({
           <Pressable style={styles.dismissArea} onPress={handleDismiss} />
         </Animated.View>
 
-        {/* KeyboardAvoidingView keeps the bottom sheet and its input fields above the keyboard */}
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.keyboardContainer}
+        {/* Smooth hardware-accelerated keyboard container */}
+        <Animated.View
+          style={[styles.keyboardContainer, keyboardAnimatedStyle]}
           pointerEvents="box-none"
         >
           {/* Animated sliding sheet */}
           <Animated.View
             style={[
               styles.sheet,
-              height !== undefined ? { height, maxHeight: height } : { maxHeight },
+              height !== undefined
+                ? { height: resolvedMaxHeight, maxHeight: resolvedMaxHeight }
+                : { maxHeight: resolvedMaxHeight },
               sheetAnimatedStyle,
+              isKeyboardVisible && styles.sheetKeyboardActive,
             ]}
           >
             {/* Drag handle pill indicator */}
             <View style={styles.handleContainer}>
               <View style={styles.handle} />
             </View>
-            <View style={height !== undefined ? styles.fixedHeightContainer : undefined}>
-              {children}
-            </View>
+            {height !== undefined ? (
+              <View style={styles.fixedHeightContainer}>{children}</View>
+            ) : (
+              children
+            )}
           </Animated.View>
-        </KeyboardAvoidingView>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -191,6 +279,9 @@ const styles = StyleSheet.create((theme, rt) => ({
     shadowOpacity: theme.isDark ? 0.35 : 0.12,
     shadowRadius: 18,
     elevation: 20,
+  },
+  sheetKeyboardActive: {
+    paddingBottom: theme.spacing.md,
   },
   handleContainer: {
     alignItems: 'center',

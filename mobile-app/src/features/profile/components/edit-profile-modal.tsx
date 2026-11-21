@@ -1,6 +1,6 @@
 import { UserPen, X } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, View } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useTranslation } from 'react-i18next';
 
@@ -25,6 +25,7 @@ export function EditProfileModal({ visible, onClose }: EditProfileModalProps) {
   const [bio, setBio] = useState(userBio);
 
   const handleSave = () => {
+    Keyboard.dismiss();
     haptics.success();
     setUserName(name.trim() || 'মাকসুদ');
     setUserBio(bio.trim() || 'সহজ হিসাব, সুন্দর বন্ধুত্ব।');
@@ -65,7 +66,9 @@ export function EditProfileModal({ visible, onClose }: EditProfileModalProps) {
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         bounces={false}
+        contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.form}>
           <TextField
@@ -137,6 +140,9 @@ const styles = StyleSheet.create((theme) => ({
   },
   buttonPressed: {
     opacity: 0.75,
+  },
+  scrollContent: {
+    paddingBottom: 24,
   },
   form: {
     gap: theme.spacing.md,

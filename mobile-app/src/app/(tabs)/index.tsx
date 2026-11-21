@@ -1,20 +1,20 @@
-import { useCallback, useRef, useState, type ComponentRef } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  ArrowLeftRight,
   ArrowRight,
   Check,
-  LayoutGrid,
+  Download,
   Pencil,
   Plus,
   Receipt,
-  User,
   Users,
   X,
 } from 'lucide-react-native';
 import { Redirect, router, Stack } from 'expo-router';
-import { BlurTargetView, BlurView } from 'expo-blur';
+import { BlurView } from 'expo-blur';
+import { GlassView, isGlassEffectAPIAvailable } from 'expo-glass-effect';
 import type { NativeScrollEvent, NativeSyntheticEvent, ScrollViewInstance } from 'react-native';
 import {
-  Image,
   Platform,
   ScrollView,
   StyleSheet as RNStyleSheet,
@@ -33,7 +33,13 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 
 import { useFormatters } from '@/shared/hooks/use-formatters';
 import { haptics } from '@/shared/lib/haptics';
-import { BalancePill, EditProjectModal, WavyHeader } from '@/features/dashboard/components';
+import {
+  BalancePill,
+  EditProjectModal,
+  GridBackground,
+  SettlementCardModal,
+  WavyHeader,
+} from '@/features/dashboard/components';
 import { useBontonStore } from '@/shared/store/bonton-store';
 import {
   useActiveGroup,
@@ -43,7 +49,7 @@ import {
   useGroupTotal,
 } from '@/shared/store/selectors';
 import type { Expense, Group } from '@/shared/types/bonton';
-import { BottomSheetModal, PressableScale, Text } from '@/shared/ui';
+import { BottomSheetModal, PressableScale, Text, UserAvatar } from '@/shared/ui';
 
 type ActiveTab = 'expenses' | 'balances' | 'settlements';
 const TABS: ActiveTab[] = ['expenses', 'balances', 'settlements'];
@@ -76,6 +82,16 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('expenses');
   const [switcherVisible, setSwitcherVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [settlementCardVisible, setSettlementCardVisible] = useState(false);
+
+  const isGlassEffectAvailable = useMemo(() => {
+    if (Platform.OS !== 'ios') return false;
+    try {
+      return isGlassEffectAPIAvailable();
+    } catch {
+      return false;
+    }
+  }, []);
 
   const openNewProject = () => {
     haptics.tap();
@@ -125,15 +141,6 @@ export default function HomeScreen() {
   const tabWidth = (safeWidth - 40) / 3;
 
   const pagerRef = useRef<ScrollViewInstance>(null);
-
-  const blurTargetRef = useRef<ComponentRef<typeof View> | null>(null);
-  const [, setBlurTargetReady] = useState(false);
-  const setBlurTargetRef = useCallback((node: ComponentRef<typeof View> | null) => {
-    blurTargetRef.current = node;
-    if (node) {
-      setBlurTargetReady(true);
-    }
-  }, []);
 
   const scrollX = useSharedValue(0);
   const currentTabSharedIndex = useSharedValue(0);
@@ -218,57 +225,66 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
 
+      {/* Subtle Dot matrix background with lower intensity */}
+      <GridBackground size={24} opacity={theme.isDark ? 0.06 : 0.04} />
+
       {/* ============================================================ */}
       {/* 1. FIXED TOP STICKY AREA (Header + Summary Card + Tabs)       */}
       {/* ============================================================ */}
       <View style={styles.fixedTopSection}>
         {/* Curvy multilayered background with theme primary gradient */}
-        <BlurTargetView ref={setBlurTargetRef}>
-          <View style={[styles.headerSection, { paddingTop: insets.top + 8 }]}>
-            <WavyHeader style={styles.headerWavyBackground} height="250%" variant="tall" />
+        <View style={[styles.headerSection, { paddingTop: insets.top + 8 }]}>
+          <WavyHeader style={styles.headerWavyBackground} height="100%" variant="tall" />
 
-            {/* Top User Info & New Project Row */}
-            <View style={styles.topBarRow}>
-              {/* Left: User Avatar & Name & Interactive Balance Pill */}
-              <View style={styles.userInfoCol}>
-                <View style={styles.avatarCircle}>
-                  {userAvatar?.startsWith('emoji:') ? (
-                    <Text style={styles.avatarEmoji}>{userAvatar.replace('emoji:', '')}</Text>
-                  ) : userAvatar ? (
-                    <Image source={{ uri: userAvatar }} style={styles.avatarImage} />
-                  ) : (
-                    <User
-                      size={24}
-                      color={theme.isDark ? theme.colors.text : theme.colors.primary}
-                      strokeWidth={2.2}
-                    />
-                  )}
-                </View>
-                <View style={styles.userTextCol}>
-                  <Text style={styles.userNameText}>
-                    {userName || 'Abdullah Al Maksud'}
-                  </Text>
-                  <BalancePill netBalance={userNetBalance} />
-                </View>
+          {/* Top User Info & New Project Row */}
+          <View style={styles.topBarRow}>
+            {/* Left: User Avatar & Name & Interactive Balance Pill */}
+            <View style={styles.userInfoCol}>
+              <View style={styles.avatarCircle}>
+                <UserAvatar
+                  avatar={userAvatar}
+                  size={42}
+                  iconSize={22}
+                  iconColor={theme.isDark ? theme.colors.text : theme.colors.primary}
+                />
               </View>
-
-              {/* Right: + New Project Button */}
-              <PressableScale
-                scaleTo={0.94}
-                onPress={openNewProject}
-                style={styles.newProjectButton}
-              >
-                <Text style={styles.newProjectButtonText}>{t('home.newProject', '+ New Project')}</Text>
-              </PressableScale>
+              <View style={styles.userTextCol}>
+                <Text style={styles.userNameText}>
+                  {userName || 'Abdullah Al Maksud'}
+                </Text>
+                <BalancePill netBalance={userNetBalance} />
+              </View>
             </View>
 
-            {/* Project Title & Action Buttons Row */}
-            <View style={styles.projectTitleRow}>
-              <Text style={styles.projectTitleText} numberOfLines={1}>
-                {activeGroup?.name ?? t('home.noProjectsTitle', 'Sajek Tour')}
+            {/* Right: Switch Project / Group Button */}
+            <PressableScale
+              scaleTo={0.94}
+              onPress={() => {
+                haptics.tap();
+                setSwitcherVisible(true);
+              }}
+              style={styles.switchGroupButton}
+              accessibilityLabel={t('home.switchProject', 'গ্রুপ পরিবর্তন')}
+            >
+              <ArrowLeftRight
+                size={14}
+                color={theme.isDark ? theme.colors.onPrimary : theme.colors.primary}
+                strokeWidth={2.4}
+              />
+              <Text style={styles.switchGroupButtonText}>
+                {t('home.switchProject', 'গ্রুপ পরিবর্তন')}
               </Text>
-              <View style={styles.headerButtonsRow}>
-                {activeGroup ? (
+            </PressableScale>
+          </View>
+
+          {/* Project Title & Action Buttons Row */}
+          <View style={styles.projectTitleRow}>
+            <Text style={styles.projectTitleText} numberOfLines={1}>
+              {activeGroup?.name ?? t('home.noProjectsTitle', 'Sajek Tour')}
+            </Text>
+            <View style={styles.headerButtonsRow}>
+              {activeGroup ? (
+                <>
                   <PressableScale
                     scaleTo={0.88}
                     onPress={() => {
@@ -276,86 +292,92 @@ export default function HomeScreen() {
                       setEditModalVisible(true);
                     }}
                     style={styles.headerIconButton}
-                    accessibilityLabel={t('home.editProject', 'Edit Project')}
+                    accessibilityLabel={t('home.editProject', 'গ্রুপ সম্পাদনা')}
                   >
                     <Pencil size={22} color={headerTextColor} strokeWidth={2.2} />
                   </PressableScale>
-                ) : null}
-                <PressableScale
-                  scaleTo={0.88}
-                  onPress={() => setSwitcherVisible(true)}
-                  style={styles.headerIconButton}
-                  accessibilityLabel={t('home.switchProject', 'Switch Project')}
-                >
-                  <LayoutGrid size={24} color={headerTextColor} strokeWidth={2} />
-                </PressableScale>
-              </View>
+                  <PressableScale
+                    scaleTo={0.88}
+                    onPress={() => {
+                      haptics.tap();
+                      setSettlementCardVisible(true);
+                    }}
+                    style={styles.headerIconButton}
+                    accessibilityLabel={t('home.downloadCard', 'Download Summary Card')}
+                  >
+                    <Download size={22} color={headerTextColor} strokeWidth={2.2} />
+                  </PressableScale>
+                </>
+              ) : null}
             </View>
-
-            {/* Project Description or Participants Subtitle */}
-            <Text style={styles.participantsSubtitle} numberOfLines={3}>
-              {activeGroup?.description
-                ? `${activeGroup.description} · ${participantNames}`
-                : repeatedParticipantNames ||
-                  'Abdullah Al Maksud Tanvir Rahim Karim Abdullah Al Maksud Tanvir Rahim Karim'}
-            </Text>
           </View>
-        </BlurTargetView>
 
-        {/* Floating Summary Stats Card */}
-        <View style={styles.summaryCardWrapper}>
-          <View style={styles.summaryCard}>
-            {/* Frosted Glass Blur Backdrop */}
-            <BlurView
-              blurTarget={blurTargetRef}
-              blurMethod="dimezisBlurView"
-              blurReductionFactor={Platform.OS === 'android' ? 2 : 4}
-              intensity={Platform.OS === 'ios' ? 75 : 85}
-              tint={theme.isDark ? 'dark' : 'light'}
-              style={RNStyleSheet.absoluteFill}
-            />
-            {/* Glass Tint Overlay */}
-            <View style={styles.summaryCardGlassTint} />
-            {/* Top specular reflection sheen */}
-            <View style={styles.glassTopShine} pointerEvents="none" />
+          {/* Project Description or Participants Subtitle */}
+          <Text style={styles.participantsSubtitle} numberOfLines={3}>
+            {activeGroup?.description
+              ? `${activeGroup.description}`
+              : repeatedParticipantNames ||
+              'Abdullah Al Maksud Tanvir Rahim Karim Abdullah Al Maksud Tanvir Rahim Karim'}
+          </Text>
 
-            {/* Left Column: Total Expense & Big Amount */}
-            <View style={styles.expenseCol}>
-              <Text style={styles.statsLabel}>
-                {t('home.totalExpense', 'Total Expense')}
-              </Text>
-              <View style={styles.amountRow}>
-                <Text style={styles.amountNumber}>
-                  {totalExpenseWhole > 0 ? totalExpenseWhole : 0}
-                </Text>
-                <Text style={styles.amountCurrency}>{currency}</Text>
-              </View>
-            </View>
+          {/* Floating Summary Stats Card with Native Glass Effect */}
+          <View style={styles.summaryCardWrapper}>
+            <GlassView
+              glassEffectStyle="regular"
+              colorScheme={theme.isDark ? 'dark' : 'light'}
+              style={styles.summaryCard}
+            >
+              {/* Frosted Glass Blur Backdrop */}
+              {(!isGlassEffectAvailable || Platform.OS === 'android') && (
+                <BlurView
+                  intensity={Platform.OS === 'ios' ? 75 : 50}
+                  tint={theme.isDark ? 'dark' : 'light'}
+                  style={[RNStyleSheet.absoluteFill, { borderRadius: 20 }]}
+                />
+              )}
+              {/* Glass Tint Overlay */}
+              <View style={styles.summaryCardGlassTint} />
+              {/* Top specular reflection sheen */}
+              <View style={styles.glassTopShine} pointerEvents="none" />
 
-            {/* Right Column: Participant Count & Splitting Method */}
-            <View style={styles.infoCol}>
-              {/* Item 1: Total Participant */}
-              <View>
+              {/* Left Column: Total Expense & Big Amount */}
+              <View style={styles.expenseCol}>
                 <Text style={styles.statsLabel}>
-                  {t('home.totalParticipant', 'Total Participant')}
+                  {t('home.totalExpense', 'Total Expense')}
                 </Text>
-                <Text style={styles.statsValue}>
-                  {t('home.personCount', {
-                    count: fmt.count(participantCount > 0 ? participantCount : 1),
-                  })}
-                </Text>
+                <View style={styles.amountRow}>
+                  <Text style={styles.amountNumber}>
+                    {totalExpenseWhole > 0 ? totalExpenseWhole : 0}
+                  </Text>
+                  <Text style={styles.amountCurrency}>{currency}</Text>
+                </View>
               </View>
 
-              {/* Item 2: Splitting Method */}
-              <View style={styles.splitMethodItem}>
-                <Text style={styles.statsLabel}>
-                  {t('home.splittingMethod', 'Splitting Method')}
-                </Text>
-                <Text style={styles.statsValue}>
-                  {splittingMethodLabel}
-                </Text>
+              {/* Right Column: Participant Count & Splitting Method */}
+              <View style={styles.infoCol}>
+                {/* Item 1: Total Participant */}
+                <View>
+                  <Text style={styles.statsLabel}>
+                    {t('home.totalParticipant', 'Total Participant')}
+                  </Text>
+                  <Text style={styles.statsValue}>
+                    {t('home.personCount', {
+                      count: fmt.count(participantCount > 0 ? participantCount : 1),
+                    })}
+                  </Text>
+                </View>
+
+                {/* Item 2: Splitting Method */}
+                <View style={styles.splitMethodItem}>
+                  <Text style={styles.statsLabel}>
+                    {t('home.splittingMethod', 'Splitting Method')}
+                  </Text>
+                  <Text style={styles.statsValue}>
+                    {splittingMethodLabel}
+                  </Text>
+                </View>
               </View>
-            </View>
+            </GlassView>
           </View>
         </View>
 
@@ -484,7 +506,7 @@ export default function HomeScreen() {
       >
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>
-            {t('home.switchProject', 'Switch Project')}
+            {t('home.switchProject', 'গ্রুপ পরিবর্তন')}
           </Text>
           <PressableScale
             scaleTo={0.9}
@@ -549,7 +571,7 @@ export default function HomeScreen() {
         >
           <Plus size={18} color={theme.colors.primaryText} strokeWidth={2.4} />
           <Text style={styles.modalNewProjectText}>
-            {t('home.newProject', '+ New Project')}
+            {t('home.newProject', 'নতুন গ্রুপ')}
           </Text>
         </PressableScale>
       </BottomSheetModal>
@@ -560,6 +582,18 @@ export default function HomeScreen() {
           visible={editModalVisible}
           onClose={() => setEditModalVisible(false)}
           group={activeGroup}
+        />
+      ) : null}
+
+      {/* Settlement Photo Card Modal */}
+      {activeGroup ? (
+        <SettlementCardModal
+          visible={settlementCardVisible}
+          onClose={() => setSettlementCardVisible(false)}
+          group={activeGroup}
+          balances={balances}
+          settlements={settlements}
+          totalSpent={totalSpent}
         />
       ) : null}
     </View>
@@ -769,8 +803,8 @@ const styles = StyleSheet.create((theme, rt) => ({
   /* --- Top Header (Curvy multilayered theme primary background) --- */
   headerSection: {
     backgroundColor: 'transparent',
-    paddingHorizontal: 20,
-    paddingBottom: 140,
+    paddingHorizontal: 16,
+    paddingBottom: 22,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -782,6 +816,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     bottom: 0,
   },
   topBarRow: {
+    paddingHorizontal: 4,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -791,6 +826,8 @@ const styles = StyleSheet.create((theme, rt) => ({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
+    marginRight: 10,
   },
   avatarCircle: {
     width: 44,
@@ -803,16 +840,9 @@ const styles = StyleSheet.create((theme, rt) => ({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 22,
-  },
-  avatarEmoji: {
-    fontSize: 22,
-  },
   userTextCol: {
     gap: 4,
+    flex: 1,
   },
   userNameText: {
     color: theme.isDark ? theme.colors.text : theme.colors.onPrimary,
@@ -820,21 +850,24 @@ const styles = StyleSheet.create((theme, rt) => ({
     fontWeight: '700',
     letterSpacing: 0.2,
   },
-  newProjectButton: {
+  switchGroupButton: {
     backgroundColor: theme.isDark ? theme.colors.primary : theme.colors.onPrimary,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 13,
+    paddingVertical: 7.5,
     borderRadius: 20,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
     ...theme.shadows.sm,
   },
-  newProjectButtonText: {
+  switchGroupButtonText: {
     color: theme.isDark ? theme.colors.onPrimary : theme.colors.primary,
-    fontSize: 13,
+    fontSize: 12.5,
     fontWeight: '700',
   },
   projectTitleRow: {
+    paddingHorizontal: 4,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -842,7 +875,8 @@ const styles = StyleSheet.create((theme, rt) => ({
   },
   projectTitleText: {
     color: theme.isDark ? theme.colors.text : theme.colors.onPrimary,
-    fontSize: 30,
+    fontSize: theme.typography.size.xxl * 1.2,
+    lineHeight: theme.typography.size.xxl * 1.6,
     fontWeight: '700',
     letterSpacing: -0.5,
     flex: 1,
@@ -857,6 +891,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     padding: 6,
   },
   participantsSubtitle: {
+    paddingHorizontal: 4,
     color: theme.isDark ? theme.colors.textSecondary : 'rgba(255, 255, 255, 0.72)',
     fontSize: 13,
     lineHeight: 18,
@@ -864,14 +899,12 @@ const styles = StyleSheet.create((theme, rt) => ({
 
   /* --- Floating Summary Card --- */
   summaryCardWrapper: {
-    paddingHorizontal: 16,
-    marginTop: -120,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: theme.isDark ? 0.35 : 0.08,
+    paddingHorizontal: 0,
+    marginTop: 18,
     shadowRadius: 16,
   },
   summaryCard: {
+    backgroundColor: theme.isDark ? 'rgba(24, 24, 27, 0.72)' : 'rgba(255, 255, 255, 0.75)',
     borderRadius: 20,
     paddingHorizontal: 20,
     paddingVertical: 18,
@@ -879,18 +912,18 @@ const styles = StyleSheet.create((theme, rt) => ({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderTopColor: 'rgba(255, 255, 255, 0.90)',
-    borderBottomColor: theme.isDark ? 'rgba(255, 255, 255, 0.20)' : 'rgba(203, 213, 225, 0.85)',
-    borderLeftColor: theme.isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(203, 213, 225, 0.75)',
-    borderRightColor: theme.isDark ? 'rgba(255, 255, 255, 0.25)' : 'rgba(203, 213, 225, 0.75)',
+    borderTopColor: theme.isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.90)',
+    borderBottomColor: theme.isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(203, 213, 225, 0.85)',
+    borderLeftColor: theme.isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(203, 213, 225, 0.75)',
+    borderRightColor: theme.isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(203, 213, 225, 0.75)',
     overflow: 'hidden',
     position: 'relative',
   },
   summaryCardGlassTint: {
     ...RNStyleSheet.absoluteFill,
     backgroundColor: theme.isDark
-      ? 'rgba(255, 255, 255, 0.05)'
-      : 'rgba(255, 255, 255, 0.22)',
+      ? 'rgba(255, 255, 255, 0.03)'
+      : 'rgba(255, 255, 255, 0.15)',
   },
   glassTopShine: {
     position: 'absolute',
@@ -898,7 +931,7 @@ const styles = StyleSheet.create((theme, rt) => ({
     left: 0,
     right: 0,
     height: 1.5,
-    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.20)' : 'rgba(255, 255, 255, 0.75)',
   },
   expenseCol: {
     flex: 1,
